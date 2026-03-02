@@ -1,0 +1,16 @@
+version: "3.9"
+
+services:
+  tengri-bot:
+    build: .
+    container_name: tengri-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - STATE_FILE=/app/data/stfu_grants.json
+    volumes:
+      - tengri-bot-data:/app/data
+
+volumes:
+  tengri-bot-data:
