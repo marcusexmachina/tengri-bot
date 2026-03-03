@@ -3,7 +3,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.error import BadRequest, Forbidden
 from telegram.ext import ContextTypes
 
-from responses import GROUP_HEARMY_PRAYERS_REPLIES, get_response
+from responses import GROUP_HEARMY_PRAYERS_REPLIES, TENGRIGUIDEME_PANEL_TEXT, get_response
 from utils import _schedule_notification_delete
 
 import random
@@ -35,7 +35,7 @@ async def cmd_tengriguideme(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         ],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    panel_text = get_response("tengriguideme_panel_text")
+    panel_text = random.choice(TENGRIGUIDEME_PANEL_TEXT)
     try:
         await context.bot.send_message(sender.id, panel_text, reply_markup=reply_markup)
     except (BadRequest, Forbidden):
@@ -43,8 +43,8 @@ async def cmd_tengriguideme(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         sent = await message.reply_text(msg)
         _schedule_notification_delete(context, chat.id, sent.message_id)
         return
-    msg = random.choice(GROUP_HEARMY_PRAYERS_REPLIES)
-    sent = await message.reply_text(msg)
+    group_msg = random.choice(GROUP_HEARMY_PRAYERS_REPLIES)
+    sent = await message.reply_text(group_msg)
     _schedule_notification_delete(context, chat.id, sent.message_id)
 
 

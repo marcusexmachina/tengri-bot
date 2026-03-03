@@ -94,7 +94,7 @@ docker compose up -d --build
 ### /tengriguideme
 
 - **Where:** Run in the group.
-- **Behavior:** Bot replies in group with a short message (e.g. "Hi, check your DM. I don't talk here.") that auto-deletes after 20 seconds. The full help panel is sent to your **private chat** with the bot.
+- **Behavior:** Bot replies in group with a short message (e.g. "Hi, check your DM. I don't talk here.") that auto-deletes after 30 seconds. The full help panel is sent to your **private chat** with the bot.
 - **DM panel:** Buttons for "Who has /stfu?", "Armor", "How to /stfu", "How to /unstfu". Tapping shows the command to copy or usage instructions.
 - **Requirement:** You must have started a chat with the bot first (tap bot name → Message). Otherwise the bot will reply in group that it couldn't DM you.
 
@@ -123,7 +123,7 @@ docker compose up -d --build
 ### /privileged_peasants
 
 - **Who can use:** Anyone.
-- **Output:** List of users with active /stfu grants and time remaining. Auto-deletes after 20s.
+- **Output:** List of users with active /stfu grants and time remaining. Auto-deletes after 30s.
 
 ### /grant_stfu
 
@@ -176,7 +176,7 @@ docker compose up -d --build
 
 ## Auto-Delete
 
-- Bot replies (warnings, command responses) are scheduled for deletion after **20 seconds**.
+- Bot replies (warnings, command responses) are scheduled for deletion after **30 seconds**.
 - Requires bot to have "delete messages" permission.
 - If messages don't disappear, check logs for `Auto-delete failed`.
 

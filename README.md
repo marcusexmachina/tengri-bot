@@ -14,7 +14,7 @@ Telegram anti-spam and moderation bot for a single group. Features:
 1. Create and activate a virtual environment:
    - `python3 -m venv .venv`
    - `source .venv/bin/activate`
-2. Install dependencies (includes optional `job-queue` for reliable 20s auto-deletes):
+2. Install dependencies (includes optional `job-queue` for reliable 30s auto-deletes):
    - `pip install -r requirements.txt`
 3. Copy `.env.example` to `.env` and fill in:
    - `TELEGRAM_TOKEN=...` (from [@BotFather](https://t.me/BotFather))
@@ -41,7 +41,7 @@ Telegram anti-spam and moderation bot for a single group. Features:
 
 - The bot must be admin in the target group with **delete messages** and **restrict users** (required for spam cleanup, /stfu, /unstfu, and for auto-deleting bot notifications and commands after 20 seconds).
 - Spam detection triggers when the same user sends the same normalized text 3 times within 120 seconds.
-- Bot notifications and /stfu, /unstfu command messages are automatically deleted after 20 seconds. If they are not disappearing, check the bot has "can delete messages" and check logs for `Auto-delete failed` warnings.
+- Bot notifications and /stfu, /unstfu command messages are automatically deleted after 30 seconds. If they are not disappearing, check the bot has "can delete messages" and check logs for `Auto-delete failed` warnings.
 - Only **one** instance of the bot should run per token at a time. If you use Docker Compose, avoid also running `python bot.py` directly on the host simultaneously.
 
 ### Persisting /stfu grants
