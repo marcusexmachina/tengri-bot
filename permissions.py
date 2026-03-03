@@ -15,6 +15,17 @@ def _has_moderation_rights(member) -> bool:
     return False
 
 
+def _is_real_admin(member) -> bool:
+    """True if member can restrict/ban (real admin). Required for /fool (1 vote) and /doxxed."""
+    if member.status == "creator":
+        return True
+    if member.status != "administrator":
+        return False
+    if isinstance(member, ChatMemberAdministrator):
+        return bool(getattr(member, "can_restrict_members", False))
+    return False
+
+
 def _full_permissions() -> ChatPermissions:
     return ChatPermissions(
         can_send_messages=True,

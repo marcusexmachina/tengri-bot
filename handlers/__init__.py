@@ -8,7 +8,9 @@ from handlers.stfu import (
     cmd_unstfu,
 )
 from handlers.stfuproof import cmd_stfuproof
-from handlers.tengriguideme import _handle_help_callback, cmd_tengriguideme
+from handlers.tengriguideme import _handle_help_callback, cmd_start, cmd_tengriguideme
+from handlers.doxx import cmd_doxx, cmd_doxxed, cmd_revoke_doxx
+from handlers.fool import cmd_fool, cmd_unfool
 
 __all__ = [
     "cmd_unstfu",
@@ -16,8 +18,14 @@ __all__ = [
     "cmd_grant_stfu",
     "cmd_revoke_stfu",
     "cmd_save_grants",
+    "cmd_start",
     "cmd_tengriguideme",
     "_handle_help_callback",
     "cmd_privileged_peasants",
     "cmd_stfuproof",
+    "cmd_doxxed",
+    "cmd_doxx",
+    "cmd_revoke_doxx",
+    "cmd_fool",
+    "cmd_unfool",
 ]

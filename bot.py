@@ -10,15 +10,22 @@ from telegram.error import Conflict
 from telegram.ext import ApplicationBuilder, CallbackQueryHandler, CommandHandler, ContextTypes, MessageHandler, filters
 
 from grants import _load_stfu_grants
+from state import _load_fool_marked
 from handlers import (
     _handle_help_callback,
+    cmd_doxx,
+    cmd_doxxed,
+    cmd_fool,
     cmd_grant_stfu,
     cmd_privileged_peasants,
+    cmd_revoke_doxx,
     cmd_revoke_stfu,
     cmd_save_grants,
+    cmd_start,
     cmd_stfu,
     cmd_stfuproof,
     cmd_tengriguideme,
+    cmd_unfool,
     cmd_unstfu,
 )
 from spam import MessageBucket, handle_message_or_media
@@ -50,19 +57,31 @@ def main() -> None:
     state_file = os.getenv("STATE_FILE", "stfu_grants.json")
     app.bot_data["state_file"] = state_file
     app.bot_data["stfu_grants"] = _load_stfu_grants(state_file)
+    app.bot_data["fool_marked"] = _load_fool_marked()
     app.bot_data["username_cache"] = {}
     app.bot_data["stfuproof_immunity"] = {}
     app.bot_data["stfuproof_cooldown"] = {}
     app.bot_data["stfuproof_duration_overrides"] = {}
 
     app.add_handler(MessageHandler(filters.UpdateType.MESSAGE & ~filters.COMMAND, handle_message_or_media))
+    app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("unstfu", cmd_unstfu))
     app.add_handler(CommandHandler("stfu", cmd_stfu))
     app.add_handler(CommandHandler("grant_stfu", cmd_grant_stfu))
     app.add_handler(CommandHandler("revoke_stfu", cmd_revoke_stfu))
     app.add_handler(CommandHandler("save_grants", cmd_save_grants))
+    app.add_handler(CommandHandler("doxxed", cmd_doxxed))
+    app.add_handler(CommandHandler("doxx", cmd_doxx))
+    app.add_handler(CommandHandler("revoke_doxx", cmd_revoke_doxx))
+    app.add_handler(CommandHandler("fool", cmd_fool))
+    app.add_handler(CommandHandler("unfool", cmd_unfool))
     app.add_handler(CommandHandler("tengriguideme", cmd_tengriguideme))
-    app.add_handler(CallbackQueryHandler(_handle_help_callback, pattern=r"^(help:(stfu|unstfu)|cmd:(privileged_peasants|holycowshithindupajeetarmor))$"))
+    app.add_handler(
+        CallbackQueryHandler(
+            _handle_help_callback,
+            pattern=r"^(help:(stfu|unstfu|fool|unfool|doxx|doxxed|revoke_doxx|back)|cmd:(privileged_peasants|holycowshithindupajeetarmor))$",
+        )
+    )
     app.add_handler(CommandHandler("privileged_peasants", cmd_privileged_peasants))
     app.add_handler(CommandHandler("holycowshithindupajeetarmor", cmd_stfuproof))
 

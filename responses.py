@@ -90,6 +90,15 @@ SPAM_WARNING_MESSAGES = [
     "Your spam is more repetitive than pajeet mantras {mention}. Muted—chant your way to hell, pagan",
 ]
 
+# NSFW content
+NSFW_WARNING_MESSAGES = [
+    "NSFW content detected {mention}. Muted—take your porn elsewhere, degenerate.",
+    "Keep that filth off this chat {mention}. Muted for posting NSFW.",
+    "No porn in this group {mention}. Muted.",
+    "NSFW content removed {mention}. Muted—go jerk off in private.",
+    "Detected explicit content {mention}. Muted.",
+]
+
 ADMIN_CHECK_FAIL_MESSAGES = [
     "Failed to verify if you're an admin. Probably because you're a nobody. Try again or cry about it.",
     "Can't check your pathetic status. Either you're too irrelevant or the API hates you. Figure it out.",
@@ -764,6 +773,32 @@ TENGRIGUIDEME_HELP_UNSTFU = [
     "• <code>/unstfu @a @b</code> (multiple street shitters)\n\n"
     "<b>Note:</b> Only in supergroups, you cow-piss guzzler.",
 ]
+TENGRIGUIDEME_HELP_FOOL = [
+    "<b>How to /fool (mark spammer/forwarder)</b>\n\n"
+    "<b>Who can use:</b> Real admins (restrict+ban): 1 reply = marked. Others: 3 members must reply /fool to the same message.\n\n"
+    "<b>Target:</b> Reply to a forward, sticker, image, or GIF.\n\n"
+    "<b>Effect:</b> Marks user. If it was a forward: deletes last 5 forwards, mutes 60s. Marked users get auto-delete on future forwards (2 identical or 5 total in 2 min).",
+]
+TENGRIGUIDEME_HELP_UNFOOL = [
+    "<b>How to /unfool</b>\n\n"
+    "<b>Who can use:</b> Real admins only.\n\n"
+    "<b>Target:</b> Reply or @mention the user to unmark.",
+]
+TENGRIGUIDEME_HELP_DOXX = [
+    "<b>How to /doxx (remove media and remember it)</b>\n\n"
+    "<b>Who can use:</b> Users granted /doxx by a real admin.\n\n"
+    "<b>How:</b> Reply to sticker, image, video, or GIF with <code>/doxx</code>. Same media will be auto-deleted if posted again.",
+]
+TENGRIGUIDEME_HELP_DOXXED = [
+    "<b>How to /doxxed (grant /doxx rights)</b>\n\n"
+    "<b>Who can use:</b> Real admins only.\n\n"
+    "<b>Target:</b> Reply or @mention the user to grant /doxx.",
+]
+TENGRIGUIDEME_HELP_REVOKE_DOXX = [
+    "<b>How to /revoke_doxx</b>\n\n"
+    "<b>Who can use:</b> Real admins only.\n\n"
+    "<b>Target:</b> Reply or @mention the user to revoke /doxx rights.",
+]
 PRIVILEGED_PEASANTS_EMPTY = [
     "No one has /stfu in this chat.",
 ]
@@ -780,11 +815,70 @@ STFU_IMMUNE_MULTI = [
     "Keep seething, you worthless muters.",
 ]
 
+# Fool
+FOOL_MARKED = [
+    "{mention} marked as fool. Future forwards will be auto-deleted.",
+]
+UNFOOL_REAL_ADMIN_ONLY = [
+    "Only real admins (restrict+ban) can use /unfool, {mention}.",
+]
+UNFOOL_NO_TARGET = [
+    "Reply to or @mention the user to unfool.",
+]
+UNFOOL_DONE = [
+    "{mention} unmarked. No longer a fool.",
+]
+UNFOOL_NOT_MARKED = [
+    "{mention} wasn't marked as a fool.",
+]
+
+# Doxx
+DOXXED_REAL_ADMIN_ONLY = [
+    "Only real admins can grant /doxx rights, {mention}.",
+]
+DOXXED_NO_TARGET = [
+    "Reply to or @mention the user to grant /doxx.",
+]
+DOXXED_DONE = [
+    "{target} can now use /doxx. Reply to media to delete and remember it.",
+]
+DOXX_REPLY_REQUIRED = [
+    "Reply to the media you want to doxx-remove.",
+]
+DOXX_NOT_MEDIA = [
+    "Reply to a sticker, image, video, or GIF.",
+]
+DOXX_NOT_GRANTED = [
+    "You don't have /doxx rights, {mention}. Ask a real admin for /doxxed.",
+]
+DOXX_DOWNLOAD_FAILED = [
+    "Couldn't download the media.",
+]
+DOXX_TOO_LARGE = [
+    "File too large to remember.",
+]
+DOXX_DONE = [
+    "Media deleted and remembered. Same media will be auto-deleted if posted again.",
+]
+REVOKE_DOXX_REAL_ADMIN_ONLY = [
+    "Only real admins can revoke /doxx, {mention}.",
+]
+REVOKE_DOXX_NO_TARGET = [
+    "Reply to or @mention the user to revoke /doxx.",
+]
+REVOKE_DOXX_DONE = [
+    "{mention} no longer has /doxx rights.",
+]
+REVOKE_DOXX_NOT_GRANTED = [
+    "{mention} didn't have /doxx rights.",
+]
+
 
 def get_response(key: str, **kwargs) -> str:
     """Return a random response for the given key, formatted with kwargs."""
     _RESPONSES = {
         "spam_warning": SPAM_WARNING_MESSAGES,
+        "nsfw_warning": NSFW_WARNING_MESSAGES,
         "admin_check_fail": ADMIN_CHECK_FAIL_MESSAGES,
         "not_admin_unmute": NOT_ADMIN_UNMUTE_MESSAGES,
         "not_admin_mute": NOT_ADMIN_MUTE_MESSAGES,
@@ -818,11 +912,34 @@ def get_response(key: str, **kwargs) -> str:
         "tengriguideme_cmd_privileged": TENGRIGUIDEME_CMD_PRIVILEGED,
         "tengriguideme_cmd_armor": TENGRIGUIDEME_CMD_ARMOR,
         "tengriguideme_help_stfu": TENGRIGUIDEME_HELP_STFU,
+        "tengriguideme_help_unfool": TENGRIGUIDEME_HELP_UNFOOL,
         "tengriguideme_help_unstfu": TENGRIGUIDEME_HELP_UNSTFU,
+        "tengriguideme_help_fool": TENGRIGUIDEME_HELP_FOOL,
+        "tengriguideme_help_doxx": TENGRIGUIDEME_HELP_DOXX,
+        "tengriguideme_help_doxxed": TENGRIGUIDEME_HELP_DOXXED,
+        "tengriguideme_help_revoke_doxx": TENGRIGUIDEME_HELP_REVOKE_DOXX,
         "privileged_peasants_empty": PRIVILEGED_PEASANTS_EMPTY,
         "privileged_peasants_header": PRIVILEGED_PEASANTS_HEADER,
         "stfu_immune_single": STFU_IMMUNE_SINGLE,
         "stfu_immune_multi": STFU_IMMUNE_MULTI,
+        "fool_marked": FOOL_MARKED,
+        "unfool_real_admin_only": UNFOOL_REAL_ADMIN_ONLY,
+        "unfool_no_target": UNFOOL_NO_TARGET,
+        "unfool_done": UNFOOL_DONE,
+        "unfool_not_marked": UNFOOL_NOT_MARKED,
+        "doxxed_real_admin_only": DOXXED_REAL_ADMIN_ONLY,
+        "doxxed_no_target": DOXXED_NO_TARGET,
+        "doxxed_done": DOXXED_DONE,
+        "doxx_reply_required": DOXX_REPLY_REQUIRED,
+        "doxx_not_media": DOXX_NOT_MEDIA,
+        "doxx_not_granted": DOXX_NOT_GRANTED,
+        "doxx_download_failed": DOXX_DOWNLOAD_FAILED,
+        "doxx_too_large": DOXX_TOO_LARGE,
+        "doxx_done": DOXX_DONE,
+        "revoke_doxx_real_admin_only": REVOKE_DOXX_REAL_ADMIN_ONLY,
+        "revoke_doxx_no_target": REVOKE_DOXX_NO_TARGET,
+        "revoke_doxx_done": REVOKE_DOXX_DONE,
+        "revoke_doxx_not_granted": REVOKE_DOXX_NOT_GRANTED,
     }
     options = _RESPONSES.get(key, [""])
     template = random.choice(options) if isinstance(options, list) else options

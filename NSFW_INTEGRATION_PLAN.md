@@ -140,13 +140,17 @@ Target behavior examples:
    - Photo is checked → NSFW → delete + mute.
    - User is muted; photo removed.
 
-Media types to cover (ideally):
-- Stickers
-- Photos
-- Videos
+Media types to cover (initial scope):
+- Stickers (WebP/PNG)
+- Photos (Telegram photos)
+- Videos (Telegram videos)
 - Animated GIFs (`animation`)
+
+Out of scope for the first implementation (can be added later in a follow‑up phase if desired):
 - Video notes
-- Documents (images, PDFs, possibly videos/docs via Telegram `document` messages)
+- PDFs
+- Archives
+- Office docs (`.doc`, `.docx`, etc.)
 
 ---
 
@@ -176,7 +180,7 @@ Cons:
 - Move/copy detector logic into Tengri bot repository as a local module (e.g. `nsfw/` package).
 - Bot calls detector functions directly (no HTTP).
 - Model loaded in‑process using Hugging Face `pipeline`.
-- All processing (image/video/pdf/archive/doc) handled via in‑process calls and temporary files.
+- All processing (images, GIFs, stickers, and videos; optionally extended later) handled via in‑process calls and temporary files.
 
 Pros:
 - Lower latency (no HTTP, direct function calls).
@@ -233,11 +237,18 @@ Key idea: reuse existing `processors.py` logic from nsfw_detector, but adapt it 
 
 In Tengri’s `config.py` (or a dedicated `nsfw/config.py`), define:
 
-- `NSFW_ENABLED = True` (feature flag, optional).
-- `NSFW_THRESHOLD` (can reuse detector’s threshold; e.g. 0.8).
-- Optional:
-  - `NSFW_MUTE_SECONDS` (how long to mute for NSFW).
-  - Limits for file sizes or per‑user checks to avoid abuse.
+- `NSFW_ENABLED = True` (feature flag).
+- Two strictness modes:
+  - `NSFW_MODE = "normal"` by default (allowed: `"normal"`, `"strict"`).
+  - `NSFW_THRESHOLD_NORMAL = 0.8`.
+  - `NSFW_THRESHOLD_STRICT = 0.7`.
+- A helper to pick the active threshold:
+  - `get_nsfw_threshold(mode: str) -> float` that returns the appropriate value.
+- `NSFW_MUTE_SECONDS`:
+  - Configurable, **default = 600 seconds (10 minutes)**.
+- Optional safety/abuse limits:
+  - Per‑file size limit for Telegram downloads (e.g. rely on Telegram’s own or add local cap).
+  - Per‑user rate limiting for NSFW checks if needed in the future.
 
 System-level requirements for Dockerfile:
 - `ffmpeg`, `poppler-utils`, `antiword`, `unrar`, `p7zip-full`, `p7zip-rar`, `libmagic`, etc.
@@ -255,68 +266,80 @@ Hugging Face cache dir:
 
 #### 4.3 Bot → Detector Call Flow
 
-Extend `spam.py::handle_message_or_media`:
+Extend `spam.py::handle_message_or_media` with the following order of operations for relevant media:
 
-1. For media types (pseudocode):
+1. **Order of operations (per incoming update in the target group):**
+   1. Check `NSFW_ENABLED`. If `False`, skip NSFW detection and proceed with current logic.
+   2. If message contains one of:
+      - Sticker (`message.sticker`; WebP/PNG → convert to `PIL.Image`).
+      - Photo (`message.photo`; choose largest size → `PIL.Image`).
+      - Animation/GIF (`message.animation`; treat as short video or extract first frame via ffmpeg).
+      - Video (`message.video`; pass as video file to detector).
+   3. Run NSFW detection first (see below).
+   4. If NSFW:
+      - Delete message.
+      - Mute user for `NSFW_MUTE_SECONDS` (default 10 minutes).
+      - Send NSFW warning message (separate from spam warning, or reuse if desired).
+      - Schedule auto‑delete of warning after 30 seconds via `_schedule_notification_delete`.
+      - **Return early** – do not run spam/media flood logic for this message.
+   5. If **not** NSFW:
+      - Fall through to existing behavior:
+        - Stickers/animations → `handle_media_flood`.
+        - Text → `handle_message`.
 
-   - Stickers (`message.sticker`)
-   - Photos (`message.photo`)
-   - Videos (`message.video`)
-   - Video notes (`message.video_note`)
-   - Animations/GIFs (`message.animation`)
-   - Documents (`message.document`) – where the MIME/extension suggests image/video/PDF/doc.
+2. **Detector call details (per media):**
 
-2. Steps per media message:
-
-   - Check that message is in the target group (`bot_data["target_group"]`).
-   - Download the file via `await context.bot.get_file(file_id)` and `download_to_memory()` or to a temp file.
-   - For:
-     - Images/stickers/animations: wrap bytes in `io.BytesIO`, open via `PIL.Image.open`, call `process_image(image)`.
-     - Videos: write to temp file; call `process_video_file(path)`.
-     - PDFs: pass bytes to `process_pdf_file(pdf_stream)`.
-     - Docs: `.doc`/`.docx` pass bytes to `process_doc_file`/`process_docx_file`.
-     - Others: optionally skip.
+   - Only run NSFW detector in the configured target group (`bot_data["target_group"]`).
+   - Download the file via `await context.bot.get_file(file_id)`:
+     - For images/stickers/animations:
+       - Download to memory (`BytesIO`), open via `PIL.Image.open`, call `process_image(image)`.
+     - For videos:
+       - Download to a temp file, call `process_video_file(temp_path)` (from `processors.py`).
    - Run detector in a worker thread to avoid blocking the async event loop:
      - `result = await asyncio.to_thread(nsfw_process_function, ...)`.
-   - If `result` exists and `result["nsfw"] > NSFW_THRESHOLD`:
-     - Delete the message.
-     - Mute the user for NSFW (reuse or configure a duration; likely same as spam, 60s).
-     - Send a warning message (can reuse spam_warning or add NSFW-specific messages).
-     - Schedule auto‑delete of the warning after 30 seconds via `_schedule_notification_delete`.
-     - Return early (do not further process this message).
-   - Else (not NSFW):
-     - Continue with normal spam/media flood logic:
-       - For stickers/animations → `handle_media_flood`.
-       - For text → `handle_message`.
+   - Determine threshold from mode:
+     - `threshold = get_nsfw_threshold(NSFW_MODE)` (normal/strict).
+   - If `result` exists and `result["nsfw"] > threshold`:
+     - Treat as NSFW and perform the actions in step 1.4 above.
 
-3. Error handling:
-   - If detector errors (exception, model unavailable, etc.):
-     - Log the error.
-     - Optionally treat the message as not NSFW and continue with spam/media flood rules only.
+3. **Error handling and timeouts (fail‑open):**
+   - Enforce per‑message time limits for detection:
+     - Images/stickers/GIFs: target ≤ ~3 seconds.
+     - Videos: target ≤ ~10–15 seconds for short clips.
+   - If the detection call:
+     - Raises an exception, or
+     - Exceeds an internal timeout,
+     - Then:
+       - Log at warning or error level with user/chat/media info.
+       - **Fail open**: treat as “not NSFW” and continue with normal spam/media flood rules only.
 
 #### 4.4 Concurrency and Thread-Safety
 
 To ensure safe concurrent NSFW checks:
 - `ModelManager` in `processors.py` already centralizes pipeline management.
-- Add a simple lock around model inference if needed:
-  - E.g., a `threading.Lock` or `asyncio.Lock` used inside a sync function (via `to_thread`).
-- Use `asyncio.to_thread` to offload blocking I/O + compute to a thread pool, so the async `python-telegram-bot` event loop is not blocked.
+- Guard inference with a single process‑wide lock:
+  - Introduce a `threading.Lock` in the NSFW module and acquire it around `pipe(image)` / other model calls.
+- Always invoke detection via `asyncio.to_thread` to offload blocking I/O + compute to a thread pool, so the async `python-telegram-bot` event loop is never blocked by model inference.
 
 #### 4.5 Behavior Integration with Existing Mutes
 
 - NSFW mutes:
   - Use the same `_mute_permissions()` as spam/stfu.
-  - Use a similar mute duration (`MUTE_SECONDS` or `NSFW_MUTE_SECONDS`).
+  - Use `NSFW_MUTE_SECONDS` (default 10 minutes), independent of spam mute duration (`MUTE_SECONDS`).
+- If the user is already muted:
+  - Use the **maximum** of existing mute expiry and new NSFW mute expiry (i.e. NSFW can only extend, never shorten).
 - Interaction with “stfuproof”:
-  - Decide whether NSFW‑based mutes should respect stfuproof immunity.
-  - Safer default: **NSFW mutes ignore stfuproof**, since NSFW is a stronger violation than general muting. If desired, reuse the immunity check from `cmd_stfu`.
+  - **NSFW mutes always override armor**:
+    - Even if a user has active stfuproof (`/holycowshithindupajeetarmor`), NSFW detection still deletes the media and mutes the user.
+    - Armor only protects against `/stfu` invocations, not NSFW enforcement.
 
 ---
 
 ### 5. Deployment & Resource Considerations
 
 - **Environment:**
-  - Current deployment: MacBook Air (local), plus Docker support.
+  - Primary target deployment: **Docker Compose**, with a single `tengri-bot` service that includes the embedded NSFW detector.
+  - Still runnable locally on macOS via `python bot.py` as long as system dependencies are installed.
   - NSFW model memory usage: ~2 GB RAM.
   - Tengri bot itself uses relatively little (tens of MBs).
   - Combined local usage: roughly 2–2.5 GB RAM is sufficient; 8 GB RAM MacBook Air is workable, 16 GB is more comfortable.
@@ -325,6 +348,10 @@ To ensure safe concurrent NSFW checks:
   - Model is downloaded once from Hugging Face (`Falconsai/nsfw_image_detection`).
   - After initial download, inference runs fully locally (no external calls).
   - No API keys required for detection.
+  - Expect slower cold start on first use:
+    - Initial model download (if cache empty).
+    - Initial model load into memory (can take several seconds).
+  - Option: either load model eagerly at startup or lazily on first NSFW check; recommended to load lazily but log clearly when this happens.
 
 - **Offline capability:**
   - After model cache is populated, both tengri‑bot and NSFW detection can run offline (beyond needing internet for Telegram itself).
@@ -339,10 +366,10 @@ Already used by Tengri bot:
 - Optional: `STATE_FILE` – for persistent `/stfu` grants.
 
 For NSFW integration:
-- `NSFW_THRESHOLD` (optional override; default 0.8).
-- Optional:
-  - `NSFW_ENABLED` boolean.
-  - `NSFW_MUTE_SECONDS` if different from existing `MUTE_SECONDS`.
+- `NSFW_ENABLED` (boolean, default `True`).
+- `NSFW_MODE` (string, default `"normal"`, alternative `"strict"`).
+- `NSFW_THRESHOLD_NORMAL` and `NSFW_THRESHOLD_STRICT` (default 0.8 and 0.7, respectively).
+- `NSFW_MUTE_SECONDS` (default 600 seconds / 10 minutes).
 
 No additional cloud tokens/credentials required; NSFW detection is local.
 
@@ -368,7 +395,7 @@ No additional cloud tokens/credentials required; NSFW detection is local.
 
 ### 8. Quick Summary for Another AI/Engineer
 
-1. **Goal:** Integrate an existing local NSFW image/video/PDF/archive/doc classifier (from `nsfw_detector`) into the `tengri-bot` Telegram anti‑spam bot so that NSFW content in a specific group is automatically deleted and its sender muted.
+1. **Goal:** Integrate an existing local NSFW image/GIF/sticker/video classifier (from `nsfw_detector`) into the `tengri-bot` Telegram anti‑spam bot so that NSFW media in a specific group is automatically deleted and its sender muted.
 2. **Current state:**
    - Tengri bot already does:
      - Text spam detection.
@@ -379,22 +406,47 @@ No additional cloud tokens/credentials required; NSFW detection is local.
 3. **Chosen architecture:** Embedded detector.
    - Bring the detector’s `processors.py`/`config.py`/`utils.py` into a `nsfw/` package inside Tengri’s repo.
    - Call detector functions directly from `spam.py` for media messages, using `asyncio.to_thread` for blocking work.
-4. **Behavior:** For any media (photo, sticker, GIF, video, doc, etc.) in the target group:
+4. **Behavior:** For any relevant media (photo, sticker, GIF/animation, video) in the target group:
    - Download it.
-   - Run NSFW detection.
+   - Run NSFW detection with the active threshold (normal/strict).
    - If `nsfw > threshold`:
      - Delete the message.
-     - Mute the sender for a configured duration.
+     - Mute the sender for `NSFW_MUTE_SECONDS` (default 10 minutes), extending any existing mute.
      - Send an auto‑deleted warning.
+     - Ignore armor (`/holycowshithindupajeetarmor`) for NSFW enforcement.
    - Else:
      - Proceed with existing spam/media flood logic.
 5. **Constraints:**
    - Must run on a MacBook Air and in Docker.
    - Detector model uses ~2 GB RAM, but everything else is light.
    - Internet only required once to download the Hugging Face model.
-6. **Inputs needed from user:**
+- 6. **Inputs needed from user:**
    - Existing: `TELEGRAM_TOKEN`, `TELEGRAM_GROUP`.
-   - New optional: `NSFW_THRESHOLD`, `NSFW_MUTE_SECONDS`, `NSFW_ENABLED`.
+   - New: `NSFW_ENABLED`, `NSFW_MODE` (normal/strict), `NSFW_MUTE_SECONDS` (default 600s).
 
 This document should give enough context for another AI/engineer to design concrete code changes and implement/test the integration.
 
+---
+
+### 9. Rollout, Logging, and Testing Strategy
+
+- **Rollout:**
+  - NSFW enforcement is enabled immediately (no dry‑run phase) once deployed.
+  - The bot owner will initially deploy and test in a separate, non‑production group chat to validate behavior before enabling in the main group.
+
+- **Logging (verbose for debugging):**
+  - Log at least one line per NSFW check (at debug or info level) with:
+    - Chat ID, user ID, media type, NSFW and normal scores, mode, and decision (NSFW/not).
+  - Log warnings/errors for:
+    - Detection failures (exceptions, timeouts).
+    - Model load issues.
+  - Allow logging level to be tuned via env or config, but default to “verbose” during initial rollout.
+
+- **Manual test cases (non‑exhaustive):**
+  - Clearly NSFW image → must be deleted + user muted for ~10 minutes.
+  - Clearly safe image → must remain; only spam/media flood rules apply.
+  - Very borderline content (e.g. swimsuit) → verify behavior under both `normal` and `strict` modes.
+  - NSFW sticker and NSFW GIF/animation → deleted + muted.
+  - Short NSFW video clip → deleted + muted; processing time within expected bounds.
+  - A few random benign stickers/GIFs/videos to confirm false positive rate is acceptable.
+  - Behavior when detector fails (e.g. simulate exception) → message left to normal spam/media flood logic; errors logged.
