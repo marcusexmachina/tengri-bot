@@ -11,12 +11,22 @@ from config import (
     ADMIN_STFU_DEFAULT_SECONDS,
     ADMIN_STFU_MAX_SECONDS,
     DELEGATE_STFU_DEFAULT_SECONDS,
-    DELEGATE_STFU_MAX_SECONDS,
     MAX_TEMP_RESTRICT_SECONDS,
     TELEGRAM_MIN_RESTRICT_SECONDS,
 )
+from reputation_thresholds import (
+    delegate_stfu_cast_seconds,
+    delegate_stfu_max_seconds,
+    get_rep,
+    has_stfu_immunity,
+)
 from grants import _load_stfu_grants, _save_stfu_grants
-from permissions import _full_permissions, _has_moderation_rights, _mute_permissions
+from permissions import (
+    _demote_zero_perms_admin,
+    _full_permissions,
+    _has_moderation_rights,
+    _mute_permissions,
+)
 from resolvers import _get_target_user_from_message, _get_target_users_from_message
 from responses import get_response
 from utils import _format_time_left, _schedule_notification_delete, extract_duration_from_message
@@ -49,9 +59,10 @@ async def cmd_unstfu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     is_mod = _has_moderation_rights(member)
     if not is_mod:
         now = time.time()
-        grants = context.bot_data.get("stfu_grants") or {}
+        grants = context.bot_data.setdefault("stfu_grants", {})
         grant = grants.get((chat.id, sender.id))
-        if not grant or grant.get("expires_at", 0) < now:
+        exp = grant.get("expires_at", 0) if grant else 0
+        if not grant or (exp > 0 and exp < now):
             msg = get_response("not_admin_unmute", mention=sender.mention_html())
             sent = await message.reply_text(msg, parse_mode="HTML")
             _schedule_notification_delete(context, chat.id, sent.message_id)
@@ -71,6 +82,10 @@ async def cmd_unstfu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     unmuted: list[User] = []
     failed: list[User] = []
     for user in users_to_unmute:
+        restrictable = await _demote_zero_perms_admin(context.bot, chat.id, user.id)
+        if not restrictable:
+            failed.append(user)
+            continue
         try:
             await context.bot.restrict_chat_member(
                 chat_id=chat.id,
@@ -127,20 +142,13 @@ async def cmd_grant_stfu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         sent = await message.reply_text(msg)
         _schedule_notification_delete(context, chat.id, sent.message_id)
         return
-    duration_seconds = extract_duration_from_message(message, target_user)
-    default_grant_seconds = 24 * 60 * 60
-    if duration_seconds is None:
-        duration_seconds = default_grant_seconds
-    duration_seconds = min(duration_seconds, MAX_TEMP_RESTRICT_SECONDS)
-    now = time.time()
     grants = context.bot_data.get("stfu_grants")
     if grants is None:
         grants = {}
         context.bot_data["stfu_grants"] = grants
-    grants[(chat.id, target_user.id)] = {"granted_by": sender.id, "expires_at": now + duration_seconds}
+    grants[(chat.id, target_user.id)] = {"granted_by": sender.id, "expires_at": 0}
     _save_stfu_grants(context.bot_data.get("state_file") or "", grants)
-    hours = round(duration_seconds / 3600, 1)
-    msg = get_response("grant_stfu_done", target=target_user.mention_html(), sender=sender.mention_html(), hours=hours)
+    msg = get_response("grant_stfu_done_permanent", target=target_user.mention_html(), sender=sender.mention_html())
     sent = await message.reply_text(msg, parse_mode="HTML")
     _schedule_notification_delete(context, chat.id, sent.message_id)
 
@@ -172,7 +180,7 @@ async def cmd_revoke_stfu(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     parts = (message.text or "").strip().split(maxsplit=1)
     rest = (parts[1].strip().lower() if len(parts) > 1 else "") or ""
     if rest == "all":
-        grants = context.bot_data.get("stfu_grants") or {}
+        grants = context.bot_data.setdefault("stfu_grants", {})
         keys_to_remove = [k for k in grants if k[0] == chat.id]
         for k in keys_to_remove:
             del grants[k]
@@ -187,7 +195,7 @@ async def cmd_revoke_stfu(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         sent = await message.reply_text(msg)
         _schedule_notification_delete(context, chat.id, sent.message_id)
         return
-    grants = context.bot_data.get("stfu_grants") or {}
+    grants = context.bot_data.setdefault("stfu_grants", {})
     key = (chat.id, target_user.id)
     if key in grants:
         del grants[key]
@@ -223,7 +231,7 @@ async def cmd_save_grants(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         sent = await message.reply_text(msg, parse_mode="HTML")
         _schedule_notification_delete(context, chat.id, sent.message_id)
         return
-    grants = context.bot_data.get("stfu_grants") or {}
+    grants = context.bot_data.setdefault("stfu_grants", {})
     path = context.bot_data.get("state_file") or ""
     _save_stfu_grants(path, grants)
     msg = get_response("save_grants_done", count=len(grants))
@@ -254,34 +262,52 @@ async def cmd_stfu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     now = time.time()
     is_mod = _has_moderation_rights(member)
     is_delegate = False
+    logger.info("cmd_stfu: sender_id=%s status=%s is_mod=%s", sender.id, getattr(member, "status", "?"), is_mod)
     if not is_mod:
-        grants = context.bot_data.get("stfu_grants") or {}
-        grant = grants.get((chat.id, sender.id))
+        grants = context.bot_data.setdefault("stfu_grants", {})
+        lookup_key = (int(chat.id), int(sender.id))
+        grant = grants.get(lookup_key)
+        grant_keys = list(grants.keys())
+        logger.info(
+            "cmd_stfu: grant lookup key=%s (types: chat.id=%s sender.id=%s), found=%s, expires_at=%s, all_keys=%s",
+            lookup_key, type(chat.id).__name__, type(sender.id).__name__, grant is not None,
+            grant.get("expires_at") if grant else None, grant_keys,
+        )
         if not grant or grant.get("expires_at", 0) < now:
+            logger.info("cmd_stfu: sender has no mod rights and no valid grant -> not_admin_mute")
             msg = get_response("not_admin_mute", mention=sender.mention_html())
             sent = await message.reply_text(msg, parse_mode="HTML")
             _schedule_notification_delete(context, chat.id, sent.message_id)
             return
         is_delegate = True
     chat_type = getattr(chat, "type", None) or getattr(chat, "_type", None)
+    logger.info("cmd_stfu: chat_type=%s", chat_type)
     if str(chat_type).lower() == "group":
+        logger.info("cmd_stfu: basic group -> mute_basic_group")
         msg = get_response("mute_basic_group")
         sent = await message.reply_text(msg)
         _schedule_notification_delete(context, chat.id, sent.message_id)
         return
     users_to_mute = await _get_target_users_from_message(message, context)
+    logger.info("cmd_stfu: resolved targets count=%s", len(users_to_mute))
     if not users_to_mute:
         msg = get_response("no_target_mute")
         sent = await message.reply_text(msg)
         _schedule_notification_delete(context, chat.id, sent.message_id)
         return
     logger.info("cmd_stfu: targets user_ids=%s", [int(u.id) for u in users_to_mute])
-    duration_seconds = extract_duration_from_message(message, None)
     if is_delegate:
-        if duration_seconds is None:
-            duration_seconds = DELEGATE_STFU_DEFAULT_SECONDS
-        duration_seconds = min(duration_seconds, DELEGATE_STFU_MAX_SECONDS)
+        rep = get_rep(context, chat.id, sender.id)
+        max_secs = delegate_stfu_max_seconds(rep)
+        if max_secs is not None:
+            duration_seconds = extract_duration_from_message(message, None)
+            if duration_seconds is None:
+                duration_seconds = delegate_stfu_cast_seconds(rep)
+            duration_seconds = min(duration_seconds, max_secs)
+        else:
+            duration_seconds = delegate_stfu_cast_seconds(rep)
     else:
+        duration_seconds = extract_duration_from_message(message, None)
         if duration_seconds is None:
             duration_seconds = ADMIN_STFU_DEFAULT_SECONDS
         duration_seconds = min(duration_seconds, ADMIN_STFU_MAX_SECONDS)
@@ -300,6 +326,11 @@ async def cmd_stfu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     logger.info("stfuproof: immunity dict has %s entries, keys=%s", len(immunity), list(immunity.keys()))
     for user in users_to_mute:
         uid = int(user.id)
+        target_rep = get_rep(context, chat.id, user.id)
+        if has_stfu_immunity(target_rep):
+            skipped_immune.append((user, -1))
+            logger.info("stfu: skipping user_id=%s (rep 200+ immunity)", uid)
+            continue
         imm_key = (chat_id_int, uid)
         imm = immunity.get(imm_key)
         if imm is None and (chat.id, user.id) != imm_key:
@@ -319,6 +350,10 @@ async def cmd_stfu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                 immunity.pop((chat.id, user.id), None)
         else:
             logger.info("stfuproof: user_id=%s has no immunity (or expired), will mute", uid)
+        restrictable = await _demote_zero_perms_admin(context.bot, chat.id, user.id)
+        if not restrictable:
+            failed.append((user, "Cannot restrict (creator or admin with rights)"))
+            continue
         try:
             if use_until:
                 await context.bot.restrict_chat_member(
@@ -347,13 +382,17 @@ async def cmd_stfu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if skipped_immune and not failed:
             if len(skipped_immune) == 1:
                 u, secs = skipped_immune[0]
-                msg = get_response("stfu_immune_single", mention=u.mention_html(), time_left=_format_time_left(secs))
+                if secs < 0:
+                    msg = get_response("stfu_immune_rep200", mention=u.mention_html())
+                else:
+                    msg = get_response("stfu_immune_single", mention=u.mention_html(), time_left=_format_time_left(secs))
                 sent = await message.reply_text(msg, parse_mode="HTML")
             else:
-                skipped_list = ", ".join(
-                    f"{u.mention_html()} (~{_format_time_left(secs)} — holy cow shit shielded pajeet)"
-                    for u, secs in skipped_immune
-                )
+                def _skip_desc(u, secs):
+                    if secs < 0:
+                        return f"{u.mention_html()} (rep 200+ immunity)"
+                    return f"{u.mention_html()} (~{_format_time_left(secs)} — holy cow shit shielded pajeet)"
+                skipped_list = ", ".join(_skip_desc(u, secs) for u, secs in skipped_immune)
                 msg = get_response("stfu_immune_multi", skipped_list=skipped_list)
                 sent = await message.reply_text(msg, parse_mode="HTML")
         else:
@@ -365,10 +404,13 @@ async def cmd_stfu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     else:
         parts = ["Muted: " + ", ".join(u.mention_html() for u in muted)]
         if skipped_immune:
-            parts.append(
-                "Skipped (stfuproof, not even admins can override): "
-                + ", ".join(f"{u.mention_html()} (~{_format_time_left(secs)})" for u, secs in skipped_immune)
-            )
+            skip_parts = []
+            for u, secs in skipped_immune:
+                if secs < 0:
+                    skip_parts.append(f"{u.mention_html()} (rep 200+ immunity)")
+                else:
+                    skip_parts.append(f"{u.mention_html()} (~{_format_time_left(secs)})")
+            parts.append("Skipped: " + ", ".join(skip_parts))
         if failed:
             parts.append("Failed: " + ", ".join(u.mention_html() for u, _ in failed))
         sent = await message.reply_text(" ".join(parts), parse_mode="HTML")

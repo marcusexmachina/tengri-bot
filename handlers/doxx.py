@@ -29,10 +29,11 @@ async def cmd_doxxed(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     sender = update.effective_user
     if not message or not chat or not sender:
         return
-    _schedule_notification_delete(context, chat.id, message.message_id)
     target_group = context.bot_data.get("target_group")
     if not target_group or chat.id != target_group:
         return
+
+    _schedule_notification_delete(context, chat.id, message.message_id)
 
     try:
         member = await context.bot.get_chat_member(chat.id, sender.id)

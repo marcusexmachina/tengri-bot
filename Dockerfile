@@ -20,7 +20,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY bot.py config.py responses.py utils.py permissions.py resolvers.py grants.py spam.py state.py README.md ./
+COPY bot.py config.py responses.py utils.py permissions.py resolvers.py grants.py spam.py state.py reputation_thresholds.py README.md config.json ./
 COPY handlers/ handlers/
 COPY nsfw/ nsfw/
 

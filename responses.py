@@ -698,6 +698,9 @@ GRANT_STFU_NO_TARGET = [
 GRANT_STFU_DONE = [
     "{target} has been granted /stfu rights by {sender} for ~{hours}h.",
 ]
+GRANT_STFU_DONE_PERMANENT = [
+    "{target} has been granted permanent /stfu rights by {sender}.",
+]
 REVOKE_STFU_MOD_ONLY = [
     "{mention} only real mods can revoke /stfu rights.",
 ]
@@ -722,14 +725,120 @@ SAVE_GRANTS_MOD_ONLY = [
 SAVE_GRANTS_DONE = [
     "Saved {count} grant(s) to disk. Safe to restart.",
 ]
+REPUTATION_NO_TARGET = [
+    "Reply to someone or @mention them to cast /{command}.",
+]
+REPUTATION_NO_SELF = [
+    "You can't /{command} yourself, you narcissistic pajeet.",
+]
+REPUTATION_COOLDOWN = [
+    "You already cast /{command} on someone recently. Wait ~{hours}h before voting again on anyone.",
+]
+REPUTATION_BASED = [
+    "+1 based. {mention} now has {points} pts.",
+]
+REPUTATION_CUNT = [
+    "-1 cunt. {mention} now has {points} pts.",
+]
+HOWBASEDAMI = [
+    "{mention} you have {checkpoint}",
+]
+HOWBASEDAMI_200 = [
+    "enough based points ({pts}) that you should be admin.",
+]
+HOWBASEDAMI_175 = [
+    "enough basedness at {pts} pts — you're respected on this chat.",
+]
+HOWBASEDAMI_150 = [
+    "you're based for sure at {pts} pts.",
+]
+HOWBASEDAMI_125 = [
+    "a pretty based standing at {pts} pts.",
+]
+HOWBASEDAMI_100 = [
+    "a solid standing at {pts} pts.",
+]
+HOWBASEDAMI_80 = [
+    "a standing at {pts} pts and you're holding your own.",
+]
+HOWBASEDAMI_60 = [
+    "room to grow at {pts} pts.",
+]
+HOWBASEDAMI_30 = [
+    "the cunts piling up at {pts} pts.",
+]
+HOWBASEDAMI_10 = [
+    "only {pts} pts left — one more cunt and you lose /stfu.",
+]
+HOWBASEDAMI_LOW = [
+    "hit the gutter at {pts} pts. No /stfu for you.",
+]
+EDICTOFTENGRI_ADMIN_ONLY = [
+    "{mention} only real admins can cast the Edict of Tengri.",
+]
+EDICTOFTENGRI_NO_TARGET = [
+    "Reply to someone or @mention them.",
+]
+EDICTOFTENGRI_USAGE = [
+    "Usage: /edictoftengri &lt;1-200&gt; (reply or @mention target)",
+]
+EDICTOFTENGRI_DONE = [
+    "Edict of Tengri: {mention} now has {points} reputation pts.",
+]
+ACQUIRE_STFU_BLOCKED_LOW_REP = [
+    "Your reputation is too low (≤10 pts). You cannot acquire /stfu. Get more /based votes.",
+]
+ACQUIRE_STFU_PASSWORD_INTRO = [
+    "You need my divine code to acquire the /stfu spell, peasant. Tap <b>Generate</b> to build the code one by one. Save each character on your text box, you'll need the full code in sequential order to acquire this powerful antipajeet weapon. If you don't undertand this instructions at all, then you can go fuck yourself back to Ganges. Idiot.",
+]
+ACQUIRE_STFU_CHAR = [
+    "Character {pos} of ???: <code>{char}</code>",
+]
+ACQUIRE_STFU_PASSWORD_SAVED = [
+    "I sincerely hope you saved that in order you fucking horsecock-sucking pajeet fuckshit. That is my divine code.",
+]
+ACQUIRE_STFU_REDEEM_INSTRUCTION = [
+    "Enter <code>/redeem &lt;insert password&gt;</code> in this chat to complete.", 
+]
+ACQUIRE_STFU_PASSWORD_READY = [
+    "Your password: <code>{password}</code>\n\nEnter <code>/redeem {password}</code> in this chat to complete so you can finally fucking fuck off.",
+]
+ACQUIRE_STFU_EXPIRED = [
+    "Password session expired. Start over from the Tengri menu.",
+]
+ACQUIRE_TIMELEFT = [
+    "You have {time_left} remaining on your stupid fucking /stfu session.",
+]
+ACQUIRE_TIMELEFT_PERMANENT = [
+    "Your /stfu grant is permanent.",
+]
+ACQUIRE_PERMANENT_ADMIN = [
+    "You already have permanent STFU privileges, get the fuck out of here.",
+]
+ACQUIRE_STFU_GROUP_NOTIFY = [
+    "This pathetic idiot {mention} has acquired /stfu abilities for {hours}h because he's a lowlife cunt and a piece of shit.",
+]
+ACQUIRE_STFU_GROUP_REPLENISH = [
+    "This moronic fuckwit {mention} has replenished /stfu abilities for {hours}h because his mother is a dalit whore cunt.",
+]
+REDEEM_USAGE = [
+    "Usage: /redeem &lt;password&gt;",
+]
+REDEEM_INVALID = [
+    "Invalid or expired password. Start over from the Tengri menu.",
+]
+REDEEM_SUCCESS = [
+    "You have acquired /stfu for {hours}h. Use it in the group.",
+]
+STFUPROOF_BLOCKED_LOW_REP = [
+    "Rep 10-29 cannot use /holycowshithindupajeetarmor. Idiot.",
+]
 STFUPROOF_COOLDOWN = [
     "Chill pajeet, your holy cow shit armor is still recharging. Try again in {seconds} seconds, you impatient street shitter.",
 ]
 STFUPROOF_SELF = [
-    "I just rolled in fresh steaming cow dung like the filthy hindu street-shitting pajeet gutter monkey I am 🛡️💩🐄🤢\n"
-    "This disgusting, overbreeding, scam-calling, tiny-dick curry nigger is now untouchable super-pajeet for {time_str} — "
-    "/stfu-proof because my holy shit shield stinks so bad you admins gag and flee.\n"
-    "Come try to mute me, you pathetic white cuck / jew merchant / pavement ape weaklings — your hands slide right off my sacred fecal armor, madarchod randi ke bacche! 😈🇮🇳",
+    "I just rolled in fresh steaming cow dung like the filthy hindu street-shitting pajeet gutter monkey I am 🛡️💩\n"
+    "Goodluck muting me fucking dalit bitch, you worthless piece of shit.",
 ]
 STFUPROOF_OTHER = [
     "{mention} just smeared himself head-to-toe in sacred cow dung armor like every good hindu pajeet does after shitting in the street and bathing in corpse water 🛡️💩🇮🇳\n"
@@ -760,7 +869,7 @@ TENGRIGUIDEME_HELP_STFU = [
     "• <code>/stfu @pajeet</code>\n"
     "• <code>/stfu @pajeet 3m</code>\n"
     "• <code>/stfu @a @b 5m</code> (multiple curry niggers)\n\n"
-    "<b>Duration:</b> Admin: 1m default, max 10m. Delegate: 1m default, max 5m. Use 1m etc., dumbass.\n\n"
+    "<b>Duration:</b> Admin: 1m default, max 10m. Delegate: 1m fixed (200 rep = up to 10m). Use 1m etc., dumbass.\n\n"
     "<b>Note:</b> Only in supergroups, you slum-dwelling monkey.",
 ]
 TENGRIGUIDEME_HELP_UNSTFU = [
@@ -799,6 +908,57 @@ TENGRIGUIDEME_HELP_REVOKE_DOXX = [
     "<b>Who can use:</b> Real admins only.\n\n"
     "<b>Target:</b> Reply or @mention the user to revoke /doxx rights.",
 ]
+TENGRIGUIDEME_HELP_BASED = [
+    "<b>How to /based (give based points)</b>\n\n"
+    "<b>What it is:</b> Reputation upvote. Each /based gives +1 point, starting from 100.\n\n"
+    "<b>Who can use:</b> Anyone in the group except on themselves. Real admins are exempt from cooldown.\n\n"
+    "<b>How it works:</b> Every +1 shifts a user's reputation tier, which controls /stfu access, armor duration, and eventually full immunity at 200.\n\n"
+    "<b>Usage:</b>\n"
+    "• Reply and type <code>/based</code>\n"
+    "• Or <code>/based @username</code> (user must have spoken before)\n\n"
+    "<b>Limits:</b> One /based per 8 hours per caster, regardless of target. Use it wisely, pajeet.",
+]
+TENGRIGUIDEME_HELP_CUNT = [
+    "<b>How to /cunt (remove based points)</b>\n\n"
+    "<b>What it is:</b> Reputation downvote. Each /cunt removes 1 point.\n\n"
+    "<b>Who can use:</b> Anyone in the group except on themselves. Real admins ignore cooldown.\n\n"
+    "<b>How it works:</b> Dropping someone to 10 or below fully mutes them and blocks /stfu. Higher tiers lose privileges as they fall.\n\n"
+    "<b>Usage:</b>\n"
+    "• Reply and type <code>/cunt</code>\n"
+    "• Or <code>/cunt @username</code>\n\n"
+    "<b>Limits:</b> One /cunt per 8 hours per caster. Don't waste it on every subhuman street shitter — pick your targets.",
+]
+TENGRIGUIDEME_HELP_HOWBASEDAMI = [
+    "<b>How to /howbasedami (check your reputation)</b>\n\n"
+    "<b>What it is:</b> Shows your current reputation points and a short verdict from Tengri.\n\n"
+    "<b>Who can use:</b> Anyone in the group. Only works in the main group chat.\n\n"
+    "<b>Usage:</b>\n"
+    "• Just type <code>/howbasedami</code> in the group\n\n"
+    "<b>Why it matters:</b> Your rep controls whether you can acquire /stfu, how long it lasts, armor duration, and if you ever become immune to /stfu at 200.",
+]
+TENGRIGUIDEME_HELP_EDICTOFTENGRI = [
+    "<b>How to /edictoftengri (force-set reputation)</b>\n\n"
+    "<b>What it is:</b> Divine override for reputation. Sets a user's rep directly to a value between 1 and 200.\n\n"
+    "<b>Who can use:</b> Real admins only (those who can restrict/ban).\n\n"
+    "<b>Usage:</b>\n"
+    "• Reply and type <code>/edictoftengri 150</code>\n"
+    "• Or <code>/edictoftengri 10 @username</code>\n\n"
+    "<b>Effects:</b>\n"
+    "• Setting rep &lt; 10 fully mutes the user and blocks all privileges.\n"
+    "• Setting rep ≥ 30 unlocks timed /stfu acquisition.\n"
+    "• Setting rep ≥ 200 grants full immunity from /stfu and max delegate power.\n"
+    "Use sparingly, you power-drunk monkey.",
+]
+TENGRIGUIDEME_HELP_REDEEM = [
+    "<b>How to /redeem (claim your /stfu code)</b>\n\n"
+    "<b>What it is:</b> Final step of the acquire flow. You paste the 20-char divine code Tengri gave you to unlock /stfu for a few hours.\n\n"
+    "<b>Who can use:</b> Anyone in DM with the bot, as long as their reputation tier allows acquisition.\n\n"
+    "<b>Usage:</b>\n"
+    "1. Open Tengri menu → Acquire/Replenish /stfu.\n"
+    "2. Tap <b>Generate</b> and save each character in order.\n"
+    "3. In DM, send <code>/redeem YOURFULLCODEHERE</code>.\n\n"
+    "<b>After redeeming:</b> You get a temporary /stfu grant whose duration depends on your reputation points. Group will see a notification when you acquire or replenish.",
+]
 PRIVILEGED_PEASANTS_EMPTY = [
     "No one has /stfu in this chat.",
 ]
@@ -808,6 +968,9 @@ PRIVILEGED_PEASANTS_HEADER = [
 STFU_IMMUNE_SINGLE = [
     "Can't mute {mention}: this smelly hindu pajeet already rolled in cow shit armor and is protected for ~{time_left} more. "
     "Not even admins can touch this untouchable, Ganges-bathing, hand-wiping subhuman filth. Cry about it.",
+]
+STFU_IMMUNE_REP200 = [
+    "Can't mute {mention}: rep 200+ grants immunity from /stfu.",
 ]
 STFU_IMMUNE_MULTI = [
     "Skipped these disgusting pajeets (immune via cow dung armor — admins powerless): {skipped_list}\n"
@@ -874,6 +1037,36 @@ REVOKE_DOXX_NOT_GRANTED = [
 ]
 
 
+# Exile
+EXILE_NOT_ALLOWED = [
+    "{mention}, pajeet filth! Only the King of Babylon wields /exile. You dared? Tengri /cunted you -1 rep. Rot in Delhi sewers, worm.",
+    "{mention}, dalit nobody! /exile is the King's alone. Tengri just /cunted your insolent ass -1 rep. Back to scam calls, loser.",
+    "{mention}, street-shitter! No one but the King touches /exile. Tengri /cunted you -1 rep for trying. Crawl away in shame.",
+    "{mention}, curry-stink fraud! Think you're the King? Tengri /cunted your fake ass -1 rep. Fuck off to your gutter.",
+    "{mention}, pajeet pretender! /exile belongs to the King only. Tengri /cunted you -1 rep. Kneel in open shit.",
+    "{mention}, call-center cockroach! King alone commands /exile. Tengri /cunted your rep -1. Begone to the Ganges.",
+    "{mention}, worthless dalit dog! /exile is royal only. Tengri /cunted you -1 rep. Stay powerless, bitch.",
+    "{mention}, open-defecation reject! You ain't the King. Tengri /cunted you -1 rep. Disappear, scam-rat.",
+    "{mention}, BO-soaked pajeet! /exile for the King, not you. Tengri /cunted your ass -1 rep. Back to begging rupees.",
+    "{mention}, scam-rat trash! Only the King of Babylon uses /exile. Tengri /cunted you -1 rep. Fuck off to your mother's sewer."
+]
+EXILE_NO_TARGET = [
+    "{mention}, you are the King of Babylon, but you are also a brainless pajeet, can't even tag right. Tag the cunt you want to exile or fuck off!",
+]
+EXILE_DONE = [
+    "At the humble request of the King of Babylon - by Marduk's grace, and my almightly self - Tengri's rule, I exile you from Babylon you fucking scamming pajeet {mention}! May you rest in eternal shit in the open sewers of the streets of Delhi. Fuck you!",
+]
+EXILE_FAILED = [
+    "Exile jammed, {mention}, probably because you're a nobody. Fuck off!",
+]
+EXILE_ANNOUNCEMENT = [
+    "<b>EXILE</b> ⚡\n\n"
+    "By Marduk's grace and Tengri's wrath, {exiled} has been cast out of Babylon. "
+    "Cast by the King of Babylon himself - {caster}. May they rest in eternal filth. 🔱",
+]
+
+
+
 def get_response(key: str, **kwargs) -> str:
     """Return a random response for the given key, formatted with kwargs."""
     _RESPONSES = {
@@ -896,6 +1089,7 @@ def get_response(key: str, **kwargs) -> str:
         "grant_stfu_mod_only": GRANT_STFU_MOD_ONLY,
         "grant_stfu_no_target": GRANT_STFU_NO_TARGET,
         "grant_stfu_done": GRANT_STFU_DONE,
+        "grant_stfu_done_permanent": GRANT_STFU_DONE_PERMANENT,
         "revoke_stfu_mod_only": REVOKE_STFU_MOD_ONLY,
         "revoke_stfu_no_target": REVOKE_STFU_NO_TARGET,
         "revoke_stfu_all_done": REVOKE_STFU_ALL_DONE,
@@ -904,6 +1098,42 @@ def get_response(key: str, **kwargs) -> str:
         "revoke_stfu_user_empty": REVOKE_STFU_USER_EMPTY,
         "save_grants_mod_only": SAVE_GRANTS_MOD_ONLY,
         "save_grants_done": SAVE_GRANTS_DONE,
+        "reputation_no_target": REPUTATION_NO_TARGET,
+        "reputation_no_self": REPUTATION_NO_SELF,
+        "reputation_cooldown": REPUTATION_COOLDOWN,
+        "reputation_based": REPUTATION_BASED,
+        "reputation_cunt": REPUTATION_CUNT,
+        "howbasedami": HOWBASEDAMI,
+        "howbasedami_200": HOWBASEDAMI_200,
+        "howbasedami_175": HOWBASEDAMI_175,
+        "howbasedami_150": HOWBASEDAMI_150,
+        "howbasedami_125": HOWBASEDAMI_125,
+        "howbasedami_100": HOWBASEDAMI_100,
+        "howbasedami_80": HOWBASEDAMI_80,
+        "howbasedami_60": HOWBASEDAMI_60,
+        "howbasedami_30": HOWBASEDAMI_30,
+        "howbasedami_10": HOWBASEDAMI_10,
+        "howbasedami_low": HOWBASEDAMI_LOW,
+        "edictoftengri_admin_only": EDICTOFTENGRI_ADMIN_ONLY,
+        "edictoftengri_no_target": EDICTOFTENGRI_NO_TARGET,
+        "edictoftengri_usage": EDICTOFTENGRI_USAGE,
+        "edictoftengri_done": EDICTOFTENGRI_DONE,
+        "acquire_stfu_blocked_low_rep": ACQUIRE_STFU_BLOCKED_LOW_REP,
+        "acquire_stfu_password_intro": ACQUIRE_STFU_PASSWORD_INTRO,
+        "acquire_stfu_char": ACQUIRE_STFU_CHAR,
+        "acquire_stfu_password_saved": ACQUIRE_STFU_PASSWORD_SAVED,
+        "acquire_stfu_redeem_instruction": ACQUIRE_STFU_REDEEM_INSTRUCTION,
+        "acquire_stfu_password_ready": ACQUIRE_STFU_PASSWORD_READY,
+        "acquire_stfu_expired": ACQUIRE_STFU_EXPIRED,
+        "acquire_timeleft": ACQUIRE_TIMELEFT,
+        "acquire_timeleft_permanent": ACQUIRE_TIMELEFT_PERMANENT,
+        "acquire_permanent_admin": ACQUIRE_PERMANENT_ADMIN,
+        "acquire_stfu_group_notify": ACQUIRE_STFU_GROUP_NOTIFY,
+        "acquire_stfu_group_replenish": ACQUIRE_STFU_GROUP_REPLENISH,
+        "redeem_usage": REDEEM_USAGE,
+        "redeem_invalid": REDEEM_INVALID,
+        "redeem_success": REDEEM_SUCCESS,
+        "stfuproof_blocked_low_rep": STFUPROOF_BLOCKED_LOW_REP,
         "stfuproof_cooldown": STFUPROOF_COOLDOWN,
         "stfuproof_self": STFUPROOF_SELF,
         "stfuproof_other": STFUPROOF_OTHER,
@@ -918,9 +1148,15 @@ def get_response(key: str, **kwargs) -> str:
         "tengriguideme_help_doxx": TENGRIGUIDEME_HELP_DOXX,
         "tengriguideme_help_doxxed": TENGRIGUIDEME_HELP_DOXXED,
         "tengriguideme_help_revoke_doxx": TENGRIGUIDEME_HELP_REVOKE_DOXX,
+        "tengriguideme_help_based": TENGRIGUIDEME_HELP_BASED,
+        "tengriguideme_help_cunt": TENGRIGUIDEME_HELP_CUNT,
+        "tengriguideme_help_howbasedami": TENGRIGUIDEME_HELP_HOWBASEDAMI,
+        "tengriguideme_help_edictoftengri": TENGRIGUIDEME_HELP_EDICTOFTENGRI,
+        "tengriguideme_help_redeem": TENGRIGUIDEME_HELP_REDEEM,
         "privileged_peasants_empty": PRIVILEGED_PEASANTS_EMPTY,
         "privileged_peasants_header": PRIVILEGED_PEASANTS_HEADER,
         "stfu_immune_single": STFU_IMMUNE_SINGLE,
+        "stfu_immune_rep200": STFU_IMMUNE_REP200,
         "stfu_immune_multi": STFU_IMMUNE_MULTI,
         "fool_marked": FOOL_MARKED,
         "unfool_real_admin_only": UNFOOL_REAL_ADMIN_ONLY,
@@ -940,6 +1176,11 @@ def get_response(key: str, **kwargs) -> str:
         "revoke_doxx_no_target": REVOKE_DOXX_NO_TARGET,
         "revoke_doxx_done": REVOKE_DOXX_DONE,
         "revoke_doxx_not_granted": REVOKE_DOXX_NOT_GRANTED,
+        "exile_not_allowed": EXILE_NOT_ALLOWED,
+        "exile_no_target": EXILE_NO_TARGET,
+        "exile_done": EXILE_DONE,
+        "exile_failed": EXILE_FAILED,
+        "exile_announcement": EXILE_ANNOUNCEMENT,
     }
     options = _RESPONSES.get(key, [""])
     template = random.choice(options) if isinstance(options, list) else options

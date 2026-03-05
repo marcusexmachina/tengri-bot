@@ -18,10 +18,12 @@ from config import (
     MEDIA_FLOOD_THRESHOLD,
     MUTE_SECONDS,
     REPEAT_WINDOW_SECONDS,
+    REP_LOW_COOLDOWN_SECONDS,
     SPAM_CATCHUP_SECONDS,
     SPAM_THRESHOLD,
 )
-from permissions import _mute_permissions
+from permissions import _demote_zero_perms_admin, _mute_permissions
+from reputation_thresholds import get_rep, is_fully_muted, low_rep_text_cooldown_seconds
 from resolvers import _update_username_cache
 from responses import get_response
 from utils import _schedule_notification_delete
@@ -186,16 +188,18 @@ async def _check_nsfw_and_act(update: Update, context: ContextTypes.DEFAULT_TYPE
     except Exception as e:
         logger.warning("NSFW: delete failed: %s", e)
 
-    try:
-        await context.bot.restrict_chat_member(
-            chat_id=chat.id,
-            user_id=user.id,
-            permissions=_mute_permissions(),
-            until_date=until_ts,
-            use_independent_chat_permissions=True,
-        )
-    except Exception as e:
-        logger.warning("NSFW: mute failed: %s", e)
+    restrictable = await _demote_zero_perms_admin(context.bot, chat.id, user.id)
+    if restrictable:
+        try:
+            await context.bot.restrict_chat_member(
+                chat_id=chat.id,
+                user_id=user.id,
+                permissions=_mute_permissions(),
+                until_date=until_ts,
+                use_independent_chat_permissions=True,
+            )
+        except Exception as e:
+            logger.warning("NSFW: mute failed: %s", e)
 
     _update_username_cache(context, chat.id, user)
     mention = user.mention_html()
@@ -350,8 +354,51 @@ async def _handle_marked_user_forward(update: Update, context: ContextTypes.DEFA
 async def handle_message_or_media(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Route to text spam or media flood handler."""
     message = update.effective_message
-    if not message:
+    user = update.effective_user
+    chat = update.effective_chat
+    if not message or not user or not chat:
         return
+    target_group = context.bot_data.get("target_group")
+    if not target_group or chat.id != target_group:
+        return
+    rep = get_rep(context, chat.id, user.id)
+    if is_fully_muted(rep):
+        try:
+            await context.bot.delete_message(chat_id=chat.id, message_id=message.message_id)
+        except Exception as e:
+            logger.warning("Low-rep delete failed: %s", e)
+        restrictable = await _demote_zero_perms_admin(context.bot, chat.id, user.id)
+        if restrictable:
+            try:
+                await context.bot.restrict_chat_member(
+                    chat_id=chat.id,
+                    user_id=user.id,
+                    permissions=_mute_permissions(),
+                    until_date=0,
+                    use_independent_chat_permissions=True,
+                )
+            except Exception as e:
+                logger.debug("Low-rep restrict failed (may already restricted): %s", e)
+        return
+    cooldown = low_rep_text_cooldown_seconds(rep)
+    if cooldown is not None:
+        last_key = (chat.id, user.id)
+        last_map = context.bot_data.setdefault("low_rep_last_message", {})
+        now = asyncio.get_event_loop().time()
+        last_ts = last_map.get(last_key, 0)
+        if now - last_ts < cooldown:
+            try:
+                await context.bot.delete_message(chat_id=chat.id, message_id=message.message_id)
+            except Exception as e:
+                logger.warning("Low-rep cooldown delete failed: %s", e)
+            return
+        if message.sticker or message.animation or message.photo or message.video or message.video_note or message.document:
+            try:
+                await context.bot.delete_message(chat_id=chat.id, message_id=message.message_id)
+            except Exception as e:
+                logger.warning("Low-rep media delete failed: %s", e)
+            return
+        last_map[last_key] = now
 
     if _is_forwarded(message):
         _track_forward_for_fool(update, context)
@@ -429,13 +476,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             except Exception as e:
                 logger.warning("Could not delete message %s: %s", msg_id, e)
     until_ts = int((update.message.date + timedelta(seconds=MUTE_SECONDS)).timestamp())
-    await context.bot.restrict_chat_member(
-        chat_id=chat.id,
-        user_id=user.id,
-        permissions=_mute_permissions(),
-        until_date=until_ts,
-        use_independent_chat_permissions=True,
-    )
+    restrictable = await _demote_zero_perms_admin(context.bot, chat.id, user.id)
+    if restrictable:
+        await context.bot.restrict_chat_member(
+            chat_id=chat.id,
+            user_id=user.id,
+            permissions=_mute_permissions(),
+            until_date=until_ts,
+            use_independent_chat_permissions=True,
+        )
     mention = user.mention_html()
     msg = get_response("spam_warning", mention=mention)
     sent = await context.bot.send_message(chat_id=chat.id, text=msg, parse_mode="HTML")
@@ -497,13 +546,15 @@ async def handle_media_flood(update: Update, context: ContextTypes.DEFAULT_TYPE)
             except Exception as e:
                 logger.warning("Could not delete message %s: %s", msg_id, e)
     until_ts = int((update.message.date + timedelta(seconds=MUTE_SECONDS)).timestamp())
-    await context.bot.restrict_chat_member(
-        chat_id=chat.id,
-        user_id=user.id,
-        permissions=_mute_permissions(),
-        until_date=until_ts,
-        use_independent_chat_permissions=True,
-    )
+    restrictable = await _demote_zero_perms_admin(context.bot, chat.id, user.id)
+    if restrictable:
+        await context.bot.restrict_chat_member(
+            chat_id=chat.id,
+            user_id=user.id,
+            permissions=_mute_permissions(),
+            until_date=until_ts,
+            use_independent_chat_permissions=True,
+        )
     mention = user.mention_html()
     msg = get_response("spam_warning", mention=mention)
     sent = await context.bot.send_message(chat_id=chat.id, text=msg, parse_mode="HTML")

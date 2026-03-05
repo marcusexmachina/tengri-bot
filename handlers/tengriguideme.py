@@ -3,6 +3,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.error import BadRequest, Forbidden
 from telegram.ext import ContextTypes
 
+from handlers.acquire_stfu import _get_acquire_button_label
 from responses import (
     GROUP_HEARMY_PRAYERS_REPLIES,
     TENGRIGUIDEME_PANEL_TEXT,
@@ -13,28 +14,42 @@ from utils import _schedule_notification_delete
 import random
 
 
-def _build_tengri_keyboard() -> InlineKeyboardMarkup:
+def _build_tengri_keyboard(context: ContextTypes.DEFAULT_TYPE | None = None, user_id: int | None = None) -> InlineKeyboardMarkup:
     keyboard = [
         [
             InlineKeyboardButton("Who has /stfu?", callback_data="cmd:privileged_peasants"),
             InlineKeyboardButton("Armor", callback_data="cmd:holycowshithindupajeetarmor"),
         ],
         [
-            InlineKeyboardButton("How to /stfu", callback_data="help:stfu"),
-            InlineKeyboardButton("How to /unstfu", callback_data="help:unstfu"),
+            InlineKeyboardButton("STFU", callback_data="help:stfu"),
+            InlineKeyboardButton("UNSTFU", callback_data="help:unstfu"),
         ],
         [
-            InlineKeyboardButton("How to /fool", callback_data="help:fool"),
-            InlineKeyboardButton("How to /unfool", callback_data="help:unfool"),
+            InlineKeyboardButton("FOOL", callback_data="help:fool"),
+            InlineKeyboardButton("UNFOOL", callback_data="help:unfool"),
         ],
         [
-            InlineKeyboardButton("How to /doxx", callback_data="help:doxx"),
-            InlineKeyboardButton("How to /doxxed", callback_data="help:doxxed"),
+            InlineKeyboardButton("DOXX", callback_data="help:doxx"),
+            InlineKeyboardButton("DOXXED", callback_data="help:doxxed"),
         ],
         [
-            InlineKeyboardButton("How to /revoke_doxx", callback_data="help:revoke_doxx"),
+            InlineKeyboardButton("REVOKE DOXX", callback_data="help:revoke_doxx"),
+        ],
+        [
+            InlineKeyboardButton("BASED", callback_data="help:based"),
+            InlineKeyboardButton("CUNT", callback_data="help:cunt"),
+        ],
+        [
+            InlineKeyboardButton("HOW BASED ARE YOU?", callback_data="help:howbasedami"),
+            InlineKeyboardButton("EDICT OF TENGRI", callback_data="help:edictoftengri"),
+        ],
+        [
+            InlineKeyboardButton("REDEEM CODE SAAR", callback_data="help:redeem"),
         ],
     ]
+    if context and user_id is not None:
+        label, callback = _get_acquire_button_label(context, user_id)
+        keyboard.append([InlineKeyboardButton(label, callback_data=callback)])
     return InlineKeyboardMarkup(keyboard)
 
 
@@ -62,7 +77,7 @@ async def cmd_tengriguideme(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         _schedule_notification_delete(context, chat.id, sent.message_id)
         return
     _schedule_notification_delete(context, chat.id, message.message_id)
-    reply_markup = _build_tengri_keyboard()
+    reply_markup = _build_tengri_keyboard(context, sender.id)
     deeplink_markup = _build_deeplink_markup(context)
     panel_text = random.choice(TENGRIGUIDEME_PANEL_TEXT)
     try:
@@ -89,7 +104,8 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # For /start tengriguideme or plain /start, show the Tengri menu panel.
     if args and args[0] != "tengriguideme":
         return
-    reply_markup = _build_tengri_keyboard()
+    user = update.effective_user
+    reply_markup = _build_tengri_keyboard(context, user.id if user else None)
     panel_text = random.choice(TENGRIGUIDEME_PANEL_TEXT)
     await message.reply_text(panel_text, reply_markup=reply_markup)
 
@@ -97,6 +113,19 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def _handle_help_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     if not query or not query.data:
+        return
+    if query.data.startswith("acquire:"):
+        from handlers.acquire_stfu import _handle_acquire_start, _handle_acquire_generate, _handle_acquire_timeleft
+        if query.data == "acquire:gen":
+            await _handle_acquire_generate(update, context)
+        elif query.data == "acquire:timeleft":
+            await _handle_acquire_timeleft(update, context)
+        elif query.data == "acquire:blocked":
+            await query.answer()
+            msg = get_response("acquire_stfu_blocked_low_rep")
+            await query.message.reply_text(msg)
+        else:
+            await _handle_acquire_start(update, context)
         return
     await query.answer()
     chat = update.effective_chat
@@ -119,7 +148,8 @@ async def _handle_help_callback(update: Update, context: ContextTypes.DEFAULT_TY
     except BadRequest:
         pass
     if query.data == "help:back":
-        reply_markup = _build_tengri_keyboard()
+        user = update.effective_user
+        reply_markup = _build_tengri_keyboard(context, user.id if user else None)
         panel_text = random.choice(TENGRIGUIDEME_PANEL_TEXT)
         await query.message.reply_text(panel_text, reply_markup=reply_markup)
         return
@@ -137,6 +167,16 @@ async def _handle_help_callback(update: Update, context: ContextTypes.DEFAULT_TY
         text = get_response("tengriguideme_help_doxxed")
     elif query.data == "help:revoke_doxx":
         text = get_response("tengriguideme_help_revoke_doxx")
+    elif query.data == "help:based":
+        text = get_response("tengriguideme_help_based")
+    elif query.data == "help:cunt":
+        text = get_response("tengriguideme_help_cunt")
+    elif query.data == "help:howbasedami":
+        text = get_response("tengriguideme_help_howbasedami")
+    elif query.data == "help:edictoftengri":
+        text = get_response("tengriguideme_help_edictoftengri")
+    elif query.data == "help:redeem":
+        text = get_response("tengriguideme_help_redeem")
     else:
         return
     back_markup = InlineKeyboardMarkup(

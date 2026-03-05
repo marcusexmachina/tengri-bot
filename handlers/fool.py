@@ -6,7 +6,7 @@ from telegram import Update
 from telegram.ext import ContextTypes
 
 from config import FOOL_VOTE_THRESHOLD, FORWARD_TRACK_WINDOW_SECONDS, MUTE_SECONDS
-from permissions import _is_real_admin, _mute_permissions
+from permissions import _demote_zero_perms_admin, _is_real_admin, _mute_permissions
 from state import _load_fool_marked, _save_fool_marked
 from responses import get_response
 from utils import _schedule_notification_delete
@@ -31,7 +31,6 @@ async def cmd_fool(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     sender = update.effective_user
     if not message or not chat or not sender:
         return
-    _schedule_notification_delete(context, chat.id, message.message_id)
     target_group = context.bot_data.get("target_group")
     if not target_group or chat.id != target_group:
         return
@@ -43,6 +42,8 @@ async def cmd_fool(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         return
     if not (_is_forwarded(replied) or _has_media_or_sticker(replied)):
         return
+
+    _schedule_notification_delete(context, chat.id, message.message_id)
 
     try:
         member = await context.bot.get_chat_member(chat.id, sender.id)
@@ -90,16 +91,18 @@ async def _apply_fool_mark_and_penalty(context, chat, target_user, marker, repli
             forward_history[key] = [(m, t) for m, t in bucket if m not in ids_to_del]
 
         until_ts = int((datetime.now(timezone.utc) + timedelta(seconds=MUTE_SECONDS)).timestamp())
-        try:
-            await context.bot.restrict_chat_member(
-                chat_id=chat.id,
-                user_id=target_user.id,
-                permissions=_mute_permissions(),
-                until_date=until_ts,
-                use_independent_chat_permissions=True,
-            )
-        except Exception as e:
-            logger.warning("Fool mute failed: %s", e)
+        restrictable = await _demote_zero_perms_admin(context.bot, chat.id, target_user.id)
+        if restrictable:
+            try:
+                await context.bot.restrict_chat_member(
+                    chat_id=chat.id,
+                    user_id=target_user.id,
+                    permissions=_mute_permissions(),
+                    until_date=until_ts,
+                    use_independent_chat_permissions=True,
+                )
+            except Exception as e:
+                logger.warning("Fool mute failed: %s", e)
 
     mention = target_user.mention_html()
     msg = get_response("fool_marked", mention=mention)

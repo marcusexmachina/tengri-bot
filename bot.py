@@ -5,16 +5,22 @@ import sys
 from collections import defaultdict
 
 from dotenv import load_dotenv
-from telegram import Update
+from telegram import BotCommand, Update
 from telegram.error import Conflict
 from telegram.ext import ApplicationBuilder, CallbackQueryHandler, CommandHandler, ContextTypes, MessageHandler, filters
 
 from grants import _load_stfu_grants
-from state import _load_fool_marked
+from state import _load_acquire_pending, _load_acquired_stfu, _load_doxx_grants, _load_doxx_hashes, _load_fool_marked, _load_reputation, _load_reputation_votes
 from handlers import (
     _handle_help_callback,
+    cmd_redeem,
     cmd_doxx,
     cmd_doxxed,
+    cmd_based,
+    cmd_cunt,
+    cmd_howbasedami,
+    cmd_edictoftengri,
+    cmd_exile,
     cmd_fool,
     cmd_grant_stfu,
     cmd_privileged_peasants,
@@ -50,7 +56,30 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
     token, group_id = load_env()
 
-    app = ApplicationBuilder().token(token).build()
+    async def _set_commands(application):
+        await application.bot.set_my_commands([
+            BotCommand("start", "Open Tengri menu"),
+            BotCommand("stfu", "Mute user(s)"),
+            BotCommand("unstfu", "Unmute user(s)"),
+            BotCommand("grant_stfu", "Grant permanent /stfu (mod)"),
+            BotCommand("revoke_stfu", "Revoke /stfu (mod)"),
+            BotCommand("save_grants", "Save grants to disk (mod)"),
+            BotCommand("doxx", "Flag media as doxx (granted)"),
+            BotCommand("doxxed", "Grant doxx rights (admin)"),
+            BotCommand("revoke_doxx", "Revoke doxx rights (admin)"),
+            BotCommand("fool", "Mark forward spammer"),
+            BotCommand("unfool", "Unmark fool (admin)"),
+            BotCommand("exile", "Ban user from the group (King of Babylon)"),
+            BotCommand("based", "+1 reputation"),
+            BotCommand("cunt", "-1 reputation"),
+            BotCommand("howbasedami", "Check your reputation"),
+            BotCommand("edictoftengri", "Set reputation (admin)"),
+            BotCommand("tengriguideme", "Open Tengri menu in DM"),
+            BotCommand("redeem", "Redeem password for /stfu (DM)"),
+            BotCommand("privileged_peasants", "Who has /stfu"),
+            BotCommand("holycowshithindupajeetarmor", "STFU immunity"),
+        ])
+    app = ApplicationBuilder().token(token).post_init(_set_commands).build()
     app.bot_data["target_group"] = group_id
     app.bot_data["spam_state"] = defaultdict(lambda: defaultdict(MessageBucket))
     app.bot_data["media_flood_state"] = defaultdict(lambda: MessageBucket())
@@ -58,6 +87,12 @@ def main() -> None:
     app.bot_data["state_file"] = state_file
     app.bot_data["stfu_grants"] = _load_stfu_grants(state_file)
     app.bot_data["fool_marked"] = _load_fool_marked()
+    app.bot_data["doxx_grants"] = _load_doxx_grants()
+    app.bot_data["doxx_hashes"] = _load_doxx_hashes()
+    app.bot_data["acquired_stfu"] = _load_acquired_stfu()
+    app.bot_data["acquire_pending"] = _load_acquire_pending()
+    app.bot_data["reputation"] = _load_reputation()
+    app.bot_data["reputation_votes"] = _load_reputation_votes()
     app.bot_data["username_cache"] = {}
     app.bot_data["stfuproof_immunity"] = {}
     app.bot_data["stfuproof_cooldown"] = {}
@@ -75,11 +110,17 @@ def main() -> None:
     app.add_handler(CommandHandler("revoke_doxx", cmd_revoke_doxx))
     app.add_handler(CommandHandler("fool", cmd_fool))
     app.add_handler(CommandHandler("unfool", cmd_unfool))
+    app.add_handler(CommandHandler("exile", cmd_exile))
+    app.add_handler(CommandHandler("based", cmd_based))
+    app.add_handler(CommandHandler("cunt", cmd_cunt))
+    app.add_handler(CommandHandler("howbasedami", cmd_howbasedami))
+    app.add_handler(CommandHandler("edictoftengri", cmd_edictoftengri))
     app.add_handler(CommandHandler("tengriguideme", cmd_tengriguideme))
+    app.add_handler(CommandHandler("redeem", cmd_redeem))
     app.add_handler(
         CallbackQueryHandler(
             _handle_help_callback,
-            pattern=r"^(help:(stfu|unstfu|fool|unfool|doxx|doxxed|revoke_doxx|back)|cmd:(privileged_peasants|holycowshithindupajeetarmor))$",
+            pattern=r"^(help:(stfu|unstfu|fool|unfool|doxx|doxxed|revoke_doxx|based|cunt|howbasedami|edictoftengri|redeem|back)|cmd:(privileged_peasants|holycowshithindupajeetarmor)|acquire:(start|gen|timeleft|blocked))$",
         )
     )
     app.add_handler(CommandHandler("privileged_peasants", cmd_privileged_peasants))

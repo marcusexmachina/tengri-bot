@@ -41,7 +41,7 @@ Telegram anti-spam and moderation bot for a single group. Features:
 
 ## Notes
 
-- The bot must be admin in the target group with **delete messages** and **restrict users** (required for spam cleanup, /stfu, /unstfu, and for auto-deleting bot notifications and commands after 20 seconds).
+- The bot must be admin in the target group with **delete messages**, **restrict users**, and **add new admins** (can_promote_members). The last is required to demote zero-permission admins before muting them; without it, /stfu will fail on such users.
 - Spam detection triggers when the same user sends the same normalized text 3 times within 120 seconds.
 - Bot notifications and /stfu, /unstfu command messages are automatically deleted after 30 seconds. If they are not disappearing, check the bot has "can delete messages" and check logs for `Auto-delete failed` warnings.
 - Only **one** instance of the bot should run per token at a time. If you use Docker Compose, avoid also running `python bot.py` directly on the host simultaneously.

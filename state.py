@@ -122,3 +122,186 @@ def _save_doxx_hashes(hashes: set[str]) -> None:
             json.dump(list(hashes), f, indent=2)
     except OSError as e:
         logger.warning("Failed to save doxx_hashes to %s: %s", path, e)
+
+
+def _load_reputation() -> dict:
+    """Returns {(chat_id, user_id): points}. Default 100 if not present."""
+    path = _state_path("STATE_FILE", "reputation.json")
+    if not path or not os.path.isfile(path):
+        return {}
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            raw = json.load(f)
+    except (OSError, json.JSONDecodeError) as e:
+        logger.warning("Failed to load reputation from %s: %s", path, e)
+        return {}
+    if not isinstance(raw, list):
+        return {}
+    result = {}
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        try:
+            cid = int(item["chat_id"])
+            uid = int(item["user_id"])
+            pts = int(item.get("points", 100))
+        except (KeyError, TypeError, ValueError):
+            continue
+        result[(cid, uid)] = pts
+    return result
+
+
+def _save_reputation(reputation: dict) -> None:
+    path = _state_path("STATE_FILE", "reputation.json")
+    if not path:
+        return
+    try:
+        parent = os.path.dirname(path)
+        if parent:
+            os.makedirs(parent, exist_ok=True)
+        payload = [{"chat_id": cid, "user_id": uid, "points": pts} for (cid, uid), pts in reputation.items()]
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(payload, f, indent=2)
+    except OSError as e:
+        logger.warning("Failed to save reputation to %s: %s", path, e)
+
+
+def _load_reputation_votes() -> list:
+    """Returns list of {chat_id, voter_id, target_id, command, at}. Prune old on load."""
+    import time
+    path = _state_path("STATE_FILE", "reputation_votes.json")
+    if not path or not os.path.isfile(path):
+        return []
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            raw = json.load(f)
+    except (OSError, json.JSONDecodeError) as e:
+        logger.warning("Failed to load reputation_votes from %s: %s", path, e)
+        return []
+    if not isinstance(raw, list):
+        return []
+    from config import REPUTATION_COOLDOWN_SECONDS
+    now = time.time()
+    cutoff = now - REPUTATION_COOLDOWN_SECONDS
+    return [v for v in raw if isinstance(v, dict) and v.get("at", 0) > cutoff]
+
+
+def _save_reputation_votes(votes: list) -> None:
+    path = _state_path("STATE_FILE", "reputation_votes.json")
+    if not path:
+        return
+    try:
+        parent = os.path.dirname(path)
+        if parent:
+            os.makedirs(parent, exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(votes, f, indent=2)
+    except OSError as e:
+        logger.warning("Failed to save reputation_votes to %s: %s", path, e)
+
+
+def _load_acquired_stfu() -> set:
+    """Returns set of (chat_id, user_id) who have ever acquired STFU via the flow."""
+    path = _state_path("STATE_FILE", "acquired_stfu.json")
+    if not path or not os.path.isfile(path):
+        return set()
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            raw = json.load(f)
+    except (OSError, json.JSONDecodeError) as e:
+        logger.warning("Failed to load acquired_stfu from %s: %s", path, e)
+        return set()
+    if not isinstance(raw, list):
+        return set()
+    result = set()
+    for item in raw:
+        if isinstance(item, dict):
+            try:
+                result.add((int(item["chat_id"]), int(item["user_id"])))
+            except (KeyError, TypeError, ValueError):
+                pass
+        elif isinstance(item, list) and len(item) == 2:
+            try:
+                result.add((int(item[0]), int(item[1])))
+            except (TypeError, ValueError):
+                pass
+    return result
+
+
+def _save_acquired_stfu(acquired: set) -> None:
+    path = _state_path("STATE_FILE", "acquired_stfu.json")
+    if not path:
+        return
+    try:
+        parent = os.path.dirname(path)
+        if parent:
+            os.makedirs(parent, exist_ok=True)
+        payload = [{"chat_id": cid, "user_id": uid} for (cid, uid) in acquired]
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(payload, f, indent=2)
+    except OSError as e:
+        logger.warning("Failed to save acquired_stfu to %s: %s", path, e)
+
+
+def _load_acquire_pending() -> dict:
+    """Load pending STFU password sessions. Drops expired entries. Returns {user_id: entry}."""
+    import time
+    path = _state_path("STATE_FILE", "acquire_pending.json")
+    if not path or not os.path.isfile(path):
+        return {}
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            raw = json.load(f)
+    except (OSError, json.JSONDecodeError) as e:
+        logger.warning("Failed to load acquire_pending from %s: %s", path, e)
+        return {}
+    if not isinstance(raw, list):
+        return {}
+    ACQUIRE_PENDING_EXPIRE_SECONDS = 600  # same as handlers.acquire_stfu
+    now = time.time()
+    cutoff = now - ACQUIRE_PENDING_EXPIRE_SECONDS
+    result = {}
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        try:
+            uid = int(item["user_id"])
+            created_at = float(item["created_at"])
+            if created_at < cutoff:
+                continue
+            result[uid] = {
+                "password": str(item.get("password", "")),
+                "target_group": int(item["target_group"]),
+                "created_at": created_at,
+                "last_char_message_id": None,
+                "target_length": 0,
+                "completed": True,
+            }
+        except (KeyError, TypeError, ValueError):
+            continue
+    return result
+
+
+def _save_acquire_pending(pending: dict) -> None:
+    """Persist pending STFU password sessions. Call after add/update/delete."""
+    path = _state_path("STATE_FILE", "acquire_pending.json")
+    if not path:
+        return
+    try:
+        parent = os.path.dirname(path)
+        if parent:
+            os.makedirs(parent, exist_ok=True)
+        payload = [
+            {
+                "user_id": uid,
+                "password": entry.get("password", ""),
+                "target_group": entry.get("target_group"),
+                "created_at": entry.get("created_at", 0),
+            }
+            for uid, entry in pending.items()
+            if isinstance(entry, dict) and entry.get("password") and entry.get("target_group")
+        ]
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(payload, f, indent=2)
+    except OSError as e:
+        logger.warning("Failed to save acquire_pending to %s: %s", path, e)
