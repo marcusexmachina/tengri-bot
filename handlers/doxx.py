@@ -1,4 +1,5 @@
 """Handlers for /doxx, /doxxed, /revoke_doxx."""
+
 import hashlib
 import logging
 import time
@@ -8,8 +9,8 @@ from telegram.ext import ContextTypes
 
 from config import DOXX_HASH_MAX_SIZE_MB
 from permissions import _is_real_admin
-from state import _load_doxx_grants, _load_doxx_hashes, _save_doxx_grants, _save_doxx_hashes
 from responses import get_response
+from state import _load_doxx_grants, _load_doxx_hashes, _save_doxx_grants, _save_doxx_hashes
 from utils import _schedule_notification_delete
 
 logger = logging.getLogger(__name__)
@@ -17,8 +18,7 @@ logger = logging.getLogger(__name__)
 
 def _has_media(message) -> bool:
     return bool(
-        message.photo or message.video or message.video_note or message.document
-        or message.sticker or message.animation
+        message.photo or message.video or message.video_note or message.document or message.sticker or message.animation
     )
 
 
@@ -49,6 +49,7 @@ async def cmd_doxxed(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         return
 
     from resolvers import _get_target_user_from_message
+
     target_user = await _get_target_user_from_message(message, context)
     if not target_user:
         msg = get_response("doxxed_no_target")
@@ -64,6 +65,7 @@ async def cmd_doxxed(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     grants[key] = {"granted_by": sender.id, "expires_at": time.time() + 365 * 24 * 60 * 60}
     _save_doxx_grants(grants)
     from commands_menu import update_dm_commands_for_user, update_user_commands, user_grants
+
     has_stfu, _ = user_grants(context.bot_data, chat.id, target_user.id)
     await update_user_commands(context.bot, chat.id, target_user.id, has_stfu_grant=has_stfu, has_doxx_grant=True)
     await update_dm_commands_for_user(context.bot, context.bot_data, chat.id, target_user.id)
@@ -189,6 +191,7 @@ async def cmd_revoke_doxx(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         return
 
     from resolvers import _get_target_user_from_message
+
     target_user = await _get_target_user_from_message(message, context)
     if not target_user:
         msg = get_response("revoke_doxx_no_target")
@@ -202,6 +205,7 @@ async def cmd_revoke_doxx(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         del grants[key]
         _save_doxx_grants(grants)
         from commands_menu import update_dm_commands_for_user, update_user_commands, user_grants
+
         has_stfu, _ = user_grants(context.bot_data, chat.id, target_user.id)
         await update_user_commands(context.bot, chat.id, target_user.id, has_stfu_grant=has_stfu, has_doxx_grant=False)
         await update_dm_commands_for_user(context.bot, context.bot_data, chat.id, target_user.id)

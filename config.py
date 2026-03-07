@@ -1,7 +1,5 @@
 """Configuration constants for Tengri bot."""
 
-import os
-
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -38,12 +36,33 @@ MAX_TEMP_RESTRICT_SECONDS = 366 * 24 * 60 * 60
 TELEGRAM_MIN_RESTRICT_SECONDS = 30
 
 DURATION_UNITS = {
-    "s": 1, "sec": 1, "secs": 1, "second": 1, "seconds": 1,
-    "m": 60, "min": 60, "mins": 60, "minute": 60, "minutes": 60,
-    "h": 60 * 60, "hr": 60 * 60, "hrs": 60 * 60, "hour": 60 * 60, "hours": 60 * 60,
-    "d": 24 * 60 * 60, "day": 24 * 60 * 60, "days": 24 * 60 * 60,
-    "w": 7 * 24 * 60 * 60, "week": 7 * 24 * 60 * 60, "weeks": 7 * 24 * 60 * 60,
-    "mo": 30 * 24 * 60 * 60, "month": 30 * 24 * 60 * 60, "months": 30 * 24 * 60 * 60,
-    "y": 365 * 24 * 60 * 60, "yr": 365 * 24 * 60 * 60, "yrs": 365 * 24 * 60 * 60,
-    "year": 365 * 24 * 60 * 60, "years": 365 * 24 * 60 * 60,
+    "s": 1,
+    "sec": 1,
+    "secs": 1,
+    "second": 1,
+    "seconds": 1,
+    "m": 60,
+    "min": 60,
+    "mins": 60,
+    "minute": 60,
+    "minutes": 60,
+    "h": 60 * 60,
+    "hr": 60 * 60,
+    "hrs": 60 * 60,
+    "hour": 60 * 60,
+    "hours": 60 * 60,
+    "d": 24 * 60 * 60,
+    "day": 24 * 60 * 60,
+    "days": 24 * 60 * 60,
+    "w": 7 * 24 * 60 * 60,
+    "week": 7 * 24 * 60 * 60,
+    "weeks": 7 * 24 * 60 * 60,
+    "mo": 30 * 24 * 60 * 60,
+    "month": 30 * 24 * 60 * 60,
+    "months": 30 * 24 * 60 * 60,
+    "y": 365 * 24 * 60 * 60,
+    "yr": 365 * 24 * 60 * 60,
+    "yrs": 365 * 24 * 60 * 60,
+    "year": 365 * 24 * 60 * 60,
+    "years": 365 * 24 * 60 * 60,
 }

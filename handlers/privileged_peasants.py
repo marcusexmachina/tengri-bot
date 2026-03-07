@@ -1,4 +1,5 @@
 """Handler for /privileged_peasants."""
+
 import html
 import logging
 import time
@@ -30,15 +31,14 @@ async def cmd_privileged_peasants(update: Update, context: ContextTypes.DEFAULT_
     grants = context.bot_data.setdefault("stfu_grants", {})
     now = time.time()
     chat_id = int(chat.id)
-    active = [
-        (k, g) for k, g in grants.items()
-        if int(k[0]) == chat_id and float(g.get("expires_at", 0)) > now
-    ]
+    active = [(k, g) for k, g in grants.items() if int(k[0]) == chat_id and float(g.get("expires_at", 0)) > now]
     if not active:
         keys_in_chat = [k for k in grants if int(k[0]) == chat_id]
         logger.info(
             "privileged_peasants: total_grants=%s chat_id=%s keys_in_this_chat=%s (all expired or wrong chat?)",
-            len(grants), chat_id, len(keys_in_chat),
+            len(grants),
+            chat_id,
+            len(keys_in_chat),
         )
         msg = get_response("privileged_peasants_empty")
         sent = await message.reply_text(msg)

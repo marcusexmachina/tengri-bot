@@ -1,4 +1,5 @@
 """Handler for /holycowshithindupajeetarmor (stfu-proof armor)."""
+
 import logging
 import time
 

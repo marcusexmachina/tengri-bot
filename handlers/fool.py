@@ -1,14 +1,15 @@
 """Handlers for /fool and /unfool."""
+
 import logging
 from datetime import datetime, timedelta, timezone
 
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from config import FOOL_VOTE_THRESHOLD, FORWARD_TRACK_WINDOW_SECONDS, MUTE_SECONDS
+from config import FOOL_VOTE_THRESHOLD, MUTE_SECONDS
 from permissions import _demote_zero_perms_admin, _is_real_admin, _mute_permissions
-from state import _load_fool_marked, _save_fool_marked
 from responses import get_response
+from state import _load_fool_marked, _save_fool_marked
 from utils import _schedule_notification_delete
 
 logger = logging.getLogger(__name__)
@@ -20,8 +21,7 @@ def _is_forwarded(message) -> bool:
 
 def _has_media_or_sticker(message) -> bool:
     return bool(
-        message.photo or message.video or message.video_note or message.document
-        or message.sticker or message.animation
+        message.photo or message.video or message.video_note or message.document or message.sticker or message.animation
     )
 
 
@@ -136,6 +136,7 @@ async def cmd_unfool(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         return
 
     from resolvers import _get_target_user_from_message
+
     target_user = await _get_target_user_from_message(message, context)
     if not target_user:
         msg = get_response("unfool_no_target")

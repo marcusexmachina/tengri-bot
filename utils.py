@@ -1,4 +1,5 @@
 """Shared utilities: duration parsing, message scheduling, formatting."""
+
 import asyncio
 import re
 
@@ -83,6 +84,7 @@ async def _job_delete_message(context: ContextTypes.DEFAULT_TYPE) -> None:
 async def _job_replace_with_minimal(context: ContextTypes.DEFAULT_TYPE) -> None:
     """JobQueue callback: edit message in place to minimal 'Ask Tengri for Guidance' view (stays indefinitely)."""
     from telegram import InlineKeyboardMarkup
+
     chat_id, message_id, user_id = context.job.data
     try:
         markup = InlineKeyboardMarkup([[ask_tengri_button()]])
@@ -113,10 +115,12 @@ def schedule_replace_with_minimal(
             data=(chat_id, message_id, user_id),
         )
     else:
+
         async def _do_replace():
             await asyncio.sleep(MENU_REPLACE_AFTER_SECONDS)
             try:
                 from telegram import InlineKeyboardMarkup
+
                 markup = InlineKeyboardMarkup([[ask_tengri_button()]])
                 await context.bot.edit_message_text(
                     chat_id=chat_id,
@@ -128,6 +132,7 @@ def schedule_replace_with_minimal(
                 set_last_dm_message(context, user_id, chat_id, message_id)
             except Exception:
                 pass
+
         asyncio.create_task(_do_replace())
 
 
@@ -151,9 +156,7 @@ def _schedule_notification_delete(context: ContextTypes.DEFAULT_TYPE, chat_id: i
             data=(chat_id, message_id),
         )
     else:
-        asyncio.create_task(
-            _delete_message_after(context.bot, chat_id, message_id, NOTIFICATION_AUTO_DELETE_SECONDS)
-        )
+        asyncio.create_task(_delete_message_after(context.bot, chat_id, message_id, NOTIFICATION_AUTO_DELETE_SECONDS))
 
 
 def _format_time_left(seconds: float) -> str:

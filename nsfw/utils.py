@@ -11,7 +11,6 @@ import zipfile
 from pathlib import Path
 
 from nsfw.config import (
-    ARCHIVE_EXTENSIONS,
     DOCUMENT_EXTENSIONS,
     IMAGE_EXTENSIONS,
     VIDEO_EXTENSIONS,
@@ -31,12 +30,7 @@ def _get_file_extension(filename: str | bytes) -> str:
 
 def can_process_file(filename: str | bytes) -> bool:
     ext = _get_file_extension(filename)
-    return (
-        ext in IMAGE_EXTENSIONS
-        or ext == ".pdf"
-        or ext in VIDEO_EXTENSIONS
-        or ext in DOCUMENT_EXTENSIONS
-    )
+    return ext in IMAGE_EXTENSIONS or ext == ".pdf" or ext in VIDEO_EXTENSIONS or ext in DOCUMENT_EXTENSIONS
 
 
 def sort_files_by_priority(handler: "ArchiveHandler", files: list) -> list:

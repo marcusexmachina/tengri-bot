@@ -1,9 +1,9 @@
 """Text spam and media flood detection."""
+
 import asyncio
 import logging
 import os
 import tempfile
-from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import timedelta
 from pathlib import Path
@@ -18,7 +18,6 @@ from config import (
     MEDIA_FLOOD_THRESHOLD,
     MUTE_SECONDS,
     REPEAT_WINDOW_SECONDS,
-    REP_LOW_COOLDOWN_SECONDS,
     SPAM_CATCHUP_SECONDS,
     SPAM_THRESHOLD,
 )
@@ -106,6 +105,7 @@ async def _check_nsfw_and_act(update: Update, context: ContextTypes.DEFAULT_TYPE
     elif message.document:
         try:
             from nsfw.check import get_media_type_from_document
+
             media_type = get_media_type_from_document(
                 message.document.mime_type,
                 message.document.file_name,
@@ -228,6 +228,7 @@ def _track_forward_for_fool(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     if not target_group or chat.id != target_group:
         return
     from config import FORWARD_TRACK_WINDOW_SECONDS
+
     now = asyncio.get_event_loop().time()
     key = (chat.id, user.id)
     bucket = context.bot_data.setdefault("forward_history", {}).setdefault(key, [])
@@ -294,9 +295,11 @@ async def _check_doxx_and_delete(update: Update, context: ContextTypes.DEFAULT_T
         logger.debug("Doxx check: failed to download: %s", e)
         return False
     from config import DOXX_HASH_MAX_SIZE_MB
+
     if len(data) > DOXX_HASH_MAX_SIZE_MB * 1024 * 1024:
         return False
     import hashlib
+
     h = hashlib.sha256(data).hexdigest()
     if h not in doxx_hashes:
         return False
@@ -392,7 +395,14 @@ async def handle_message_or_media(update: Update, context: ContextTypes.DEFAULT_
             except Exception as e:
                 logger.warning("Low-rep cooldown delete failed: %s", e)
             return
-        if message.sticker or message.animation or message.photo or message.video or message.video_note or message.document:
+        if (
+            message.sticker
+            or message.animation
+            or message.photo
+            or message.video
+            or message.video_note
+            or message.document
+        ):
             try:
                 await context.bot.delete_message(chat_id=chat.id, message_id=message.message_id)
             except Exception as e:

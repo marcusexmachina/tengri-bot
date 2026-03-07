@@ -1,4 +1,5 @@
 """Tengri bot entry point."""
+
 import logging
 import os
 import sys
@@ -10,21 +11,20 @@ from telegram.error import Conflict
 from telegram.ext import ApplicationBuilder, CallbackQueryHandler, CommandHandler, ContextTypes, MessageHandler, filters
 
 from grants import _load_stfu_grants
-from state import _load_acquire_pending, _load_acquired_stfu, _load_doxx_grants, _load_doxx_hashes, _load_dm_started_users, _load_fool_marked, _load_reputation, _load_reputation_votes
 from handlers import (
     _handle_help_callback,
-    cmd_redeem,
-    cmd_doxx,
-    cmd_doxxed,
     cmd_based,
     cmd_cunt,
-    cmd_howbasedami,
-    cmd_howbasediseveryone,
+    cmd_doxx,
+    cmd_doxxed,
     cmd_edictoftengri,
     cmd_exile,
     cmd_fool,
     cmd_grant_stfu,
+    cmd_howbasedami,
+    cmd_howbasediseveryone,
     cmd_privileged_peasants,
+    cmd_redeem,
     cmd_revoke_doxx,
     cmd_revoke_stfu,
     cmd_save_grants,
@@ -36,6 +36,16 @@ from handlers import (
     cmd_unstfu,
 )
 from spam import MessageBucket, handle_message_or_media
+from state import (
+    _load_acquire_pending,
+    _load_acquired_stfu,
+    _load_dm_started_users,
+    _load_doxx_grants,
+    _load_doxx_hashes,
+    _load_fool_marked,
+    _load_reputation,
+    _load_reputation_votes,
+)
 
 
 def load_env() -> tuple[str, int]:
@@ -98,6 +108,7 @@ def main() -> None:
             BotCommand("holycowshithindupajeetarmor", "STFU immunity"),
         ]
         await application.bot.set_my_commands(admin_commands, scope=BotCommandScopeAllChatAdministrators())
+
     app = ApplicationBuilder().token(token).post_init(_set_commands).build()
     app.bot_data["target_group"] = group_id
     app.bot_data["spam_state"] = defaultdict(lambda: defaultdict(MessageBucket))

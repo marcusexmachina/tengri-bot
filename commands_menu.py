@@ -1,4 +1,5 @@
 """Per-user command menu updates so granted users see /stfu, /unstfu, /doxx in the group and in DM."""
+
 import logging
 import time
 
@@ -99,6 +100,7 @@ async def update_dm_commands_for_user(bot, bot_data: dict, target_group: int, us
     """
     try:
         from permissions import _has_moderation_rights
+
         member = await bot.get_chat_member(target_group, user_id)
         if _has_moderation_rights(member):
             commands = list(_ADMIN)

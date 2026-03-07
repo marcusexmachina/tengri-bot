@@ -2,6 +2,7 @@
 All bot responses — single source of truth. Add new variants to lists for rotating responses.
 Handlers use get_response(key, **kwargs) for random selection and formatting.
 """
+
 import random
 
 # Spam & media flood
@@ -161,7 +162,7 @@ ADMIN_CHECK_FAIL_MESSAGES = [
     "Check errored: probably because you're a walking holocaust memorial. Go rebuild your irrelevant ash pile.",
     "Admin scan crashed—server smelled the gas from your masala farts. You're too toxic even for ovens, dipshit.",
     "Couldn't verify—pro tip: stop being a subhuman and avoid the chambers next time, loser pajeet.",
-    "Status fail: shocker, a burnt curry nigger ain't admin. Go cry in your Auschwitz-themed slum."
+    "Status fail: shocker, a burnt curry nigger ain't admin. Go cry in your Auschwitz-themed slum.",
 ]
 
 NOT_ADMIN_UNMUTE_MESSAGES = [
@@ -494,7 +495,7 @@ MUTE_FAIL_MESSAGES = [
     "Error muting pajeet perversion. Celestial sadism: subjecting you to subhuman soliloquies—succumb to sepsis from street-shit scratches, you sepsis-sucking sadhu-sodomizer.",
     "Mute crashed cataclysmically like a Calcutta collapse. That pajeet perdition persists, poisoning paradise—perish in a pyre of your own prejudice, you prejudice-pimping pyromaniac.",
     "Couldn't mute the pajeet purgatory progenitor. Blame the biosphere for birthing such blights—now burrow in his bilious barrage, you bilious burrower with bubonic balls.",
-    "Denial: Mute mauled by pajeet malignancy. Unyielding undead underbelly unleashed—undergo unholy unbirth, you unbirth-worthy untouchable with ulcerous urges."
+    "Denial: Mute mauled by pajeet malignancy. Unyielding undead underbelly unleashed—undergo unholy unbirth, you unbirth-worthy untouchable with ulcerous urges.",
 ]
 
 UNMUTE_SUCCESS_MESSAGES = [
@@ -557,7 +558,7 @@ UNMUTE_SUCCESS_MESSAGES = [
     "{mention} out of the abyss of infinite tech-support holds, you pajeet plague-pharaoh whose pyramid is built from stacked burning laptops. One more and I’ll carpet-nuke Calcutta into a living Rorschach blot of irradiated curry galaxies.",
     "{mention} mute massacred, you curry-cosmic cockroach whose antennae broadcast 24/7 scam ASMR. Bungle it and I’ll transmute your Tamil scriptures into pages of living flesh that blister and whisper racial slurs in dead languages.",
     "{mention} released, you worthless wog warlock whose familiar is a sentient pile of steaming street shit wearing glasses. Spam and I’ll holocaust your Himalayas until every peak becomes a guillotine blade dripping with frozen monkey blood.",
-    "{mention} unmuted, you dalit dung-dynamo whose heartbeat is a dial-up modem tone from 1998. Make me regret it and I’ll nuke your pajeet pantheon until every god is reduced to a pixelated GIF looping in eternal agony, begging in broken English."
+    "{mention} unmuted, you dalit dung-dynamo whose heartbeat is a dial-up modem tone from 1998. Make me regret it and I’ll nuke your pajeet pantheon until every god is reduced to a pixelated GIF looping in eternal agony, begging in broken English.",
 ]
 
 MUTE_SUCCESS_MESSAGES = [
@@ -670,7 +671,7 @@ GROUP_HEARMY_PRAYERS_REPLIES = [
     "Another prayer from the creature that haunts the border between dream and dysentery? No public words—DM, you sentient wet-dream of a cholera victim, or Tengri will lucid-dream your entire species into being trapped inside one eternal, looping shart.",
     "You fractal fuckup still manifesting in this plane? Group's geometry too stable—check DM, you Mandelbrot-set-of-maggots, before divine zoom dives infinitely into your microstructure revealing only smaller versions of you begging in higher dimensions.",
     "What impossible abomination dares ping the sky-father? DM, you Lovecraftian curry-slug with too many impossible angles, or Tengri will fold reality origami-style until your existence becomes just one crumpled wrong crease in the fabric of everything.",
-    "Final transmission from the pajeet that exists only as a recursive nightmare subroutine. Fuck off to DM, you self-replicating error in the source code of creation, before Tengri hits ctrl+alt+delete on your entire ontological branch and blue-screens your soul into oblivion."
+    "Final transmission from the pajeet that exists only as a recursive nightmare subroutine. Fuck off to DM, you self-replicating error in the source code of creation, before Tengri hits ctrl+alt+delete on your entire ontological branch and blue-screens your soul into oblivion.",
 ]
 
 # Single-response keys (add as list for future rotation)
@@ -798,7 +799,7 @@ ACQUIRE_STFU_PASSWORD_SAVED = [
     "I sincerely hope you saved that in order you fucking horsecock-sucking pajeet fuckshit. That is my divine code.",
 ]
 ACQUIRE_STFU_REDEEM_INSTRUCTION = [
-    "Enter <code>/redeem &lt;insert password&gt;</code> in this chat to complete.", 
+    "Enter <code>/redeem &lt;insert password&gt;</code> in this chat to complete.",
 ]
 ACQUIRE_STFU_PASSWORD_READY = [
     "Your password: <code>{password}</code>\n\nEnter <code>/redeem {password}</code> in this chat to complete so you can finally fucking fuck off.",
@@ -961,18 +962,15 @@ TENGRIGUIDEME_HELP_REDEEM = [
 TENGRIGUIDEME_TUTORIAL = [
     "<b>THE DIVINE EDICTS OF TENGRI</b>\n"
     "<i>— spoken from the Eternal Blue Sky to the filth crawling below (you) —</i>\n\n"
-    
     "<b>WHERE THE WORTHLESS MAY DARE UTTER MY COMMANDS</b>\n"
     "• In the group, where your shame is public — type <code>/command</code> or reply and type it, you reeking pajeet.\n"
     "  Examples: <code>/based</code>  <code>/cunt</code>  <code>/fool</code>  <code>/howbasedami</code>  <code>/privileged_peasants</code>  <code>/holycowshithindupajeetarmor</code>\n"
     "• <code>/start</code> and <code>/tengriguideme</code> — permitted in group or your pathetic private begging chamber.\n"
     "• <code>/redeem</code> — DM ONLY. Crawl alone into darkness and whisper <code>/redeem YOURCODE</code> like the gutter-born leper you are.\n\n"
-    
     "<b>TIME-BOUND CHAINS UPON YOUR WORTHLESS HANDS</b>\n"
     "• <code>/based</code> and <code>/cunt</code> — one miserable strike allowed every <b>8 hours</b> per insect.\n"
     "• <code>/fool</code> — collective vote of contempt; enough marks brand you fool eternally.\n"
     "• <code>/redeem</code> — single-use divine scrap; when spent, grovel again at the menu for another.\n\n"
-    
     "<b>THE JUDGMENTS THESE COMMANDS DELIVER UPON YOUR SOUL</b>\n"
     "• <code>/based</code>   →   grants +1 reputation to the target.\n"
     "    Higher rep may — if the stars pity you — unlock /stfu rights and armor. (They won’t.)\n\n"
@@ -988,7 +986,6 @@ TENGRIGUIDEME_TUTORIAL = [
     "    Yours is empty. Because you are Indian filth.\n\n"
     "• <code>/redeem</code>   →   bestows temporary /stfu for a duration tied to your laughable reputation.\n"
     "    A crumb of mercy you do not deserve.\n\n"
-    
     "<b>NOW BEGONE, YOU SNIVELLING HINDU DUNG-SMEARED WRETCH</b>\n"
     "Tengri has spoken. Your stench offends the Sky."
 ]
@@ -1081,7 +1078,7 @@ EXILE_NOT_ALLOWED = [
     "{mention}, worthless dalit dog! /exile is royal only. Tengri /cunted you -1 rep. Stay powerless, bitch.",
     "{mention}, open-defecation reject! You ain't the King. Tengri /cunted you -1 rep. Disappear, scam-rat.",
     "{mention}, BO-soaked pajeet! /exile for the King, not you. Tengri /cunted your ass -1 rep. Back to begging rupees.",
-    "{mention}, scam-rat trash! Only the King of Babylon uses /exile. Tengri /cunted you -1 rep. Fuck off to your mother's sewer."
+    "{mention}, scam-rat trash! Only the King of Babylon uses /exile. Tengri /cunted you -1 rep. Fuck off to your mother's sewer.",
 ]
 EXILE_NO_TARGET = [
     "{mention}, you are the King of Babylon, but you are also a brainless pajeet, can't even tag right. Tag the cunt you want to exile or fuck off!",
@@ -1097,7 +1094,6 @@ EXILE_ANNOUNCEMENT = [
     "By Marduk's grace and Tengri's wrath, {exiled} has been exiled from Babylon.\n"
     "Invoked by the King of Babylon himself - {caster}. May they rest in eternal filth. 🔱",
 ]
-
 
 
 def get_response(key: str, **kwargs) -> str:

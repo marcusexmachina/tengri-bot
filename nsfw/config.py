@@ -4,6 +4,7 @@ import os
 
 # Ensure .env is loaded before reading (config may be imported before bot.py load_env)
 from dotenv import load_dotenv
+
 load_dotenv()
 
 NSFW_ENABLED = os.getenv("NSFW_ENABLED", "false").lower() in ("true", "1", "yes")

@@ -1,4 +1,5 @@
 """STFU grant persistence: load/save JSON."""
+
 import json
 import logging
 import os

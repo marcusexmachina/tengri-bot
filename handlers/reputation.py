@@ -1,4 +1,5 @@
 """Handlers for /based and /cunt reputation commands."""
+
 import asyncio
 import html
 import logging
@@ -14,7 +15,7 @@ from config import (
     REPUTATION_MIN,
 )
 from grants import _save_stfu_grants
-from permissions import _demote_zero_perms_admin, _is_real_admin, _full_permissions, _mute_permissions
+from permissions import _demote_zero_perms_admin, _full_permissions, _is_real_admin, _mute_permissions
 from reputation_thresholds import get_rep
 from resolvers import _get_target_user_from_message
 from responses import get_response
@@ -112,14 +113,17 @@ def _record_vote(context, chat_id: int, voter_id: int, target_id: int, command: 
     if votes is None:
         votes = _load_reputation_votes()
         context.bot_data["reputation_votes"] = votes
-    votes.append({
-        "chat_id": chat_id,
-        "voter_id": voter_id,
-        "target_id": target_id,
-        "command": command,
-        "at": time.time(),
-    })
+    votes.append(
+        {
+            "chat_id": chat_id,
+            "voter_id": voter_id,
+            "target_id": target_id,
+            "command": command,
+            "at": time.time(),
+        }
+    )
     from config import REPUTATION_COOLDOWN_SECONDS
+
     cutoff = time.time() - REPUTATION_COOLDOWN_SECONDS
     votes[:] = [v for v in votes if isinstance(v, dict) and v.get("at", 0) > cutoff]
     _save_reputation_votes(votes)
@@ -279,11 +283,7 @@ async def cmd_howbasediseveryone(update: Update, context: ContextTypes.DEFAULT_T
         reputation = _load_reputation()
         context.bot_data["reputation"] = reputation
 
-    entries = [
-        (user_id, pts)
-        for (cid, user_id), pts in reputation.items()
-        if cid == target_group
-    ]
+    entries = [(user_id, pts) for (cid, user_id), pts in reputation.items() if cid == target_group]
     if not entries:
         sent = await message.reply_text("No peasants in the record.")
         _schedule_notification_delete(context, chat.id, sent.message_id)
@@ -307,10 +307,12 @@ async def cmd_howbasediseveryone(update: Update, context: ContextTypes.DEFAULT_T
     async def _resolve_all(user_ids: list[int]) -> dict[int, str]:
         out = {}
         sem = asyncio.Semaphore(10)
+
         async def one(uid):
             async with sem:
                 disp = await _get_display(context.bot, target_group, uid)
                 out[uid] = disp
+
         await asyncio.gather(*[one(uid) for uid in user_ids])
         return out
 
@@ -338,6 +340,8 @@ async def cmd_howbasediseveryone(update: Update, context: ContextTypes.DEFAULT_T
     msg = "\n".join(parts).strip()
     sent = await message.reply_text(msg, parse_mode="HTML")
     _schedule_notification_delete(context, chat.id, sent.message_id)
+
+
 # --- END HOWBASEDISEVERYONE ---
 
 

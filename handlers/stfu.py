@@ -1,4 +1,5 @@
 """Handlers for /stfu, /unstfu, /grant_stfu, /revoke_stfu, /save_grants."""
+
 import logging
 import time
 from datetime import timedelta
@@ -10,22 +11,21 @@ from telegram.ext import ContextTypes
 from config import (
     ADMIN_STFU_DEFAULT_SECONDS,
     ADMIN_STFU_MAX_SECONDS,
-    DELEGATE_STFU_DEFAULT_SECONDS,
     MAX_TEMP_RESTRICT_SECONDS,
     TELEGRAM_MIN_RESTRICT_SECONDS,
+)
+from grants import _save_stfu_grants
+from permissions import (
+    _demote_zero_perms_admin,
+    _full_permissions,
+    _has_moderation_rights,
+    _mute_permissions,
 )
 from reputation_thresholds import (
     delegate_stfu_cast_seconds,
     delegate_stfu_max_seconds,
     get_rep,
     has_stfu_immunity,
-)
-from grants import _load_stfu_grants, _save_stfu_grants
-from permissions import (
-    _demote_zero_perms_admin,
-    _full_permissions,
-    _has_moderation_rights,
-    _mute_permissions,
 )
 from resolvers import _get_target_user_from_message, _get_target_users_from_message
 from responses import get_response
@@ -149,6 +149,7 @@ async def cmd_grant_stfu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     grants[(chat.id, target_user.id)] = {"granted_by": sender.id, "expires_at": 0}
     _save_stfu_grants(context.bot_data.get("state_file") or "", grants)
     from commands_menu import update_dm_commands_for_user, update_user_commands, user_grants
+
     _, has_doxx = user_grants(context.bot_data, chat.id, target_user.id)
     await update_user_commands(context.bot, chat.id, target_user.id, has_stfu_grant=True, has_doxx_grant=has_doxx)
     await update_dm_commands_for_user(context.bot, context.bot_data, chat.id, target_user.id)
@@ -190,11 +191,16 @@ async def cmd_revoke_stfu(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             del grants[k]
         _save_stfu_grants(context.bot_data.get("state_file") or "", grants)
         from commands_menu import update_dm_commands_for_user, update_user_commands, user_grants
-        for (_cid, uid) in keys_to_remove:
+
+        for _cid, uid in keys_to_remove:
             _, has_doxx = user_grants(context.bot_data, chat.id, uid)
             await update_user_commands(context.bot, chat.id, uid, has_stfu_grant=False, has_doxx_grant=has_doxx)
             await update_dm_commands_for_user(context.bot, context.bot_data, chat.id, uid)
-        msg = get_response("revoke_stfu_all_done", count=len(keys_to_remove)) if keys_to_remove else get_response("revoke_stfu_all_empty")
+        msg = (
+            get_response("revoke_stfu_all_done", count=len(keys_to_remove))
+            if keys_to_remove
+            else get_response("revoke_stfu_all_empty")
+        )
         sent = await message.reply_text(msg)
         _schedule_notification_delete(context, chat.id, sent.message_id)
         return
@@ -210,6 +216,7 @@ async def cmd_revoke_stfu(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         del grants[key]
         _save_stfu_grants(context.bot_data.get("state_file") or "", grants)
         from commands_menu import update_dm_commands_for_user, update_user_commands, user_grants
+
         _, has_doxx = user_grants(context.bot_data, chat.id, target_user.id)
         await update_user_commands(context.bot, chat.id, target_user.id, has_stfu_grant=False, has_doxx_grant=has_doxx)
         await update_dm_commands_for_user(context.bot, context.bot_data, chat.id, target_user.id)
@@ -283,12 +290,17 @@ async def cmd_stfu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         grant_keys = list(grants.keys())
         logger.info(
             "cmd_stfu: grant lookup key=%s (types: chat.id=%s sender.id=%s), found=%s, expires_at=%s, all_keys=%s",
-            lookup_key, type(chat.id).__name__, type(sender.id).__name__, grant is not None,
-            grant.get("expires_at") if grant else None, grant_keys,
+            lookup_key,
+            type(chat.id).__name__,
+            type(sender.id).__name__,
+            grant is not None,
+            grant.get("expires_at") if grant else None,
+            grant_keys,
         )
         if not grant or grant.get("expires_at", 0) < now:
             logger.info("cmd_stfu: sender has no mod rights and no valid grant -> not_admin_mute")
             from commands_menu import update_dm_commands_for_user, update_user_commands, user_grants
+
             _, has_doxx = user_grants(context.bot_data, chat.id, sender.id)
             await update_user_commands(context.bot, chat.id, sender.id, has_stfu_grant=False, has_doxx_grant=has_doxx)
             await update_dm_commands_for_user(context.bot, context.bot_data, chat.id, sender.id)
@@ -402,13 +414,17 @@ async def cmd_stfu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                 if secs < 0:
                     msg = get_response("stfu_immune_rep200", mention=u.mention_html())
                 else:
-                    msg = get_response("stfu_immune_single", mention=u.mention_html(), time_left=_format_time_left(secs))
+                    msg = get_response(
+                        "stfu_immune_single", mention=u.mention_html(), time_left=_format_time_left(secs)
+                    )
                 sent = await message.reply_text(msg, parse_mode="HTML")
             else:
+
                 def _skip_desc(u, secs):
                     if secs < 0:
                         return f"{u.mention_html()} (rep 200+ immunity)"
                     return f"{u.mention_html()} (~{_format_time_left(secs)} — holy cow shit shielded pajeet)"
+
                 skipped_list = ", ".join(_skip_desc(u, secs) for u, secs in skipped_immune)
                 msg = get_response("stfu_immune_multi", skipped_list=skipped_list)
                 sent = await message.reply_text(msg, parse_mode="HTML")

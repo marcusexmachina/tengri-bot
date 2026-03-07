@@ -1,4 +1,5 @@
 """Handlers for acquire/replenish STFU flow (password-based)."""
+
 import asyncio
 import json
 import logging
@@ -12,7 +13,7 @@ from telegram.ext import ContextTypes
 
 from grants import _save_stfu_grants
 from reputation_thresholds import acquire_session_seconds, can_acquire_stfu, get_rep
-from state import _load_acquired_stfu, _save_acquired_stfu, _save_acquire_pending
+from state import _save_acquire_pending, _save_acquired_stfu
 from utils import (
     _schedule_notification_delete,
     ask_tengri_button,
@@ -73,9 +74,11 @@ def _get_acquire_button_label(context, user_id: int) -> tuple[str, str]:
         if exp == 0:
             return "Time left: permanent", "acquire:timeleft"
         import time
+
         now = time.time()
         if exp > now:
             from utils import _format_time_left
+
             left = _format_time_left(exp - now)
             return f"Time left: {left}", "acquire:timeleft"
     rep = get_rep(context, target_group, user_id)
@@ -102,6 +105,7 @@ async def _handle_acquire_start(update: Update, context: ContextTypes.DEFAULT_TY
     rep = get_rep(context, target_group, user.id)
     if not can_acquire_stfu(rep):
         from responses import get_response
+
         await delete_last_dm_message(context, user.id)
         try:
             await query.message.delete()
@@ -129,11 +133,14 @@ async def _handle_acquire_start(update: Update, context: ContextTypes.DEFAULT_TY
     }
     _save_acquire_pending(pending)
     from responses import get_response
+
     msg = get_response("acquire_stfu_password_intro")
-    markup = InlineKeyboardMarkup([
-        [InlineKeyboardButton("Generate", callback_data="acquire:gen")],
-        [ask_tengri_button()],
-    ])
+    markup = InlineKeyboardMarkup(
+        [
+            [InlineKeyboardButton("Generate", callback_data="acquire:gen")],
+            [ask_tengri_button()],
+        ]
+    )
     sent = await context.bot.send_message(chat.id, msg, reply_markup=markup, parse_mode="HTML")
     set_last_dm_message(context, user.id, chat.id, sent.message_id)
     schedule_replace_with_minimal(context, chat.id, sent.message_id, user.id)
@@ -152,6 +159,7 @@ async def _handle_acquire_generate(update: Update, context: ContextTypes.DEFAULT
     entry = pending.get(user.id)
     if not entry:
         from responses import get_response
+
         await delete_last_dm_message(context, user.id)
         try:
             await query.message.delete()
@@ -166,6 +174,7 @@ async def _handle_acquire_generate(update: Update, context: ContextTypes.DEFAULT
     if now - entry["created_at"] > ACQUIRE_PENDING_EXPIRE_SECONDS:
         del pending[user.id]
         from responses import get_response
+
         await delete_last_dm_message(context, user.id)
         try:
             await query.message.delete()
@@ -179,6 +188,7 @@ async def _handle_acquire_generate(update: Update, context: ContextTypes.DEFAULT
     # If this session is already completed, nudge user to redeem instead of generating more.
     if entry.get("completed"):
         from responses import get_response
+
         await delete_last_dm_message(context, user.id)
         try:
             await query.message.delete()
@@ -192,6 +202,7 @@ async def _handle_acquire_generate(update: Update, context: ContextTypes.DEFAULT
         return
     await query.answer()
     from responses import get_response
+
     chars = string.ascii_letters + string.digits
 
     # Non-incremental mode: generate a full random password string at once.
@@ -292,6 +303,7 @@ async def _handle_acquire_timeleft(update: Update, context: ContextTypes.DEFAULT
     granted_by = grant.get("granted_by")
     if exp == 0 and granted_by is not None and granted_by != user.id:
         from responses import get_response
+
         await delete_last_dm_message(context, user.id)
         try:
             await query.message.delete()
@@ -305,6 +317,7 @@ async def _handle_acquire_timeleft(update: Update, context: ContextTypes.DEFAULT
         return
     if exp == 0:
         from responses import get_response
+
         await delete_last_dm_message(context, user.id)
         try:
             await query.message.delete()
@@ -317,11 +330,13 @@ async def _handle_acquire_timeleft(update: Update, context: ContextTypes.DEFAULT
         schedule_replace_with_minimal(context, chat.id, sent.message_id, user.id)
         return
     import time
+
     now = time.time()
     if exp <= now:
         return
-    from utils import _format_time_left
     from responses import get_response
+    from utils import _format_time_left
+
     await delete_last_dm_message(context, user.id)
     try:
         await query.message.delete()
@@ -343,6 +358,7 @@ async def cmd_redeem(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         return
     if chat.type != "private":
         from responses import get_response
+
         msg = get_response("redeem_usage")
         await message.reply_text(msg, parse_mode="HTML")
         logger.info("redeem: ignored in non-DM chat_id=%s user_id=%s", chat.id, user.id)
@@ -353,6 +369,7 @@ async def cmd_redeem(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     parts = (message.text or "").strip().split(maxsplit=1)
     if len(parts) < 2:
         from responses import get_response
+
         msg = get_response("redeem_usage")
         sent = await message.reply_text(msg, parse_mode="HTML")
         _schedule_notification_delete(context, chat.id, sent.message_id)
@@ -363,6 +380,7 @@ async def cmd_redeem(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     if not entry:
         logger.info("redeem: no pending entry user_id=%s", user.id)
         from responses import get_response
+
         msg = get_response("redeem_invalid")
         sent = await message.reply_text(msg)
         _schedule_notification_delete(context, chat.id, sent.message_id)
@@ -370,6 +388,7 @@ async def cmd_redeem(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     if entry.get("password") != password:
         logger.info("redeem: password mismatch user_id=%s", user.id)
         from responses import get_response
+
         msg = get_response("redeem_invalid")
         sent = await message.reply_text(msg)
         _schedule_notification_delete(context, chat.id, sent.message_id)
@@ -377,6 +396,7 @@ async def cmd_redeem(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     if entry.get("target_group") != target_group:
         logger.info("redeem: target_group mismatch user_id=%s", user.id)
         from responses import get_response
+
         msg = get_response("redeem_invalid")
         sent = await message.reply_text(msg)
         _schedule_notification_delete(context, chat.id, sent.message_id)
@@ -386,6 +406,7 @@ async def cmd_redeem(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     rep = get_rep(context, target_group, user.id)
     if not can_acquire_stfu(rep):
         from responses import get_response
+
         msg = get_response("acquire_stfu_blocked_low_rep")
         sent = await message.reply_text(msg)
         _schedule_notification_delete(context, chat.id, sent.message_id)
@@ -393,6 +414,7 @@ async def cmd_redeem(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     duration_seconds = acquire_session_seconds(rep)
     if duration_seconds <= 0:
         from responses import get_response
+
         msg = get_response("acquire_stfu_blocked_low_rep")
         sent = await message.reply_text(msg)
         _schedule_notification_delete(context, chat.id, sent.message_id)
@@ -405,7 +427,10 @@ async def cmd_redeem(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     _save_stfu_grants(state_file, grants)
     logger.info(
         "redeem: saved grant key=%s expires_at=%s state_file=%s grants_count=%s",
-        save_key, now + duration_seconds, state_file or "(empty)", len(grants),
+        save_key,
+        now + duration_seconds,
+        state_file or "(empty)",
+        len(grants),
     )
     acquired = context.bot_data.get("acquired_stfu") or set()
     is_replenish = (target_group, user.id) in acquired
@@ -414,6 +439,7 @@ async def cmd_redeem(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     _save_acquired_stfu(acquired)
     hours = round(duration_seconds / 3600, 1)
     from responses import get_response
+
     msg = get_response("redeem_success", mention=user.mention_html(), hours=hours)
     sent = await message.reply_text(msg, parse_mode="HTML")
     _schedule_notification_delete(context, chat.id, sent.message_id)
@@ -425,6 +451,7 @@ async def cmd_redeem(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     except Exception as e:
         logger.warning("Failed to notify group of acquire: %s", e)
     from commands_menu import update_dm_commands_for_user, update_user_commands, user_grants
+
     _, has_doxx = user_grants(context.bot_data, target_group, user.id)
     await update_user_commands(context.bot, target_group, user.id, has_stfu_grant=True, has_doxx_grant=has_doxx)
     await update_dm_commands_for_user(context.bot, context.bot_data, target_group, user.id)

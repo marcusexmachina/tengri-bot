@@ -1,4 +1,5 @@
 """Handler for /exile (ban user from the group)."""
+
 import logging
 
 from telegram import Update
@@ -9,7 +10,6 @@ from permissions import _can_exile
 from resolvers import _get_target_user_from_message
 from responses import get_response
 from utils import _schedule_notification_delete
-
 
 logger = logging.getLogger(__name__)
 
@@ -73,4 +73,3 @@ async def cmd_exile(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await context.bot.pin_chat_message(chat_id=chat.id, message_id=sent.message_id)
     except Exception as e:
         logger.warning("Could not pin exile announcement: %s", e)
-

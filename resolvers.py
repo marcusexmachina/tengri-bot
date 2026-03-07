@@ -1,4 +1,5 @@
 """User resolution from reply, @mention, username cache."""
+
 from telegram import MessageEntity, User
 from telegram.ext import ContextTypes
 
@@ -52,7 +53,9 @@ async def _get_target_user_from_message(message, context: ContextTypes.DEFAULT_T
                         logger.warning("get_chat_member failed for @%s (id=%s): %s", username, user_id, e)
                 else:
                     logger = __import__("logging").getLogger(__name__)
-                    logger.info("Could not resolve @%s in this chat (not in cache); try reply or tap their name.", username)
+                    logger.info(
+                        "Could not resolve @%s in this chat (not in cache); try reply or tap their name.", username
+                    )
     return None
 
 

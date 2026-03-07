@@ -1,4 +1,5 @@
 """Persistence for fool_marked, doxx_grants, doxx_hashes."""
+
 import json
 import logging
 import os
@@ -57,6 +58,7 @@ def _load_doxx_grants() -> dict:
     if not isinstance(raw, list):
         return {}
     import time
+
     now = time.time()
     grants = {}
     for item in raw:
@@ -169,6 +171,7 @@ def _save_reputation(reputation: dict) -> None:
 def _load_reputation_votes() -> list:
     """Returns list of {chat_id, voter_id, target_id, command, at}. Prune old on load."""
     import time
+
     path = _state_path("STATE_FILE", "reputation_votes.json")
     if not path or not os.path.isfile(path):
         return []
@@ -181,6 +184,7 @@ def _load_reputation_votes() -> list:
     if not isinstance(raw, list):
         return []
     from config import REPUTATION_COOLDOWN_SECONDS
+
     now = time.time()
     cutoff = now - REPUTATION_COOLDOWN_SECONDS
     return [v for v in raw if isinstance(v, dict) and v.get("at", 0) > cutoff]
@@ -246,6 +250,7 @@ def _save_acquired_stfu(acquired: set) -> None:
 def _load_acquire_pending() -> dict:
     """Load pending STFU password sessions. Drops expired entries. Returns {user_id: entry}."""
     import time
+
     path = _state_path("STATE_FILE", "acquire_pending.json")
     if not path or not os.path.isfile(path):
         return {}

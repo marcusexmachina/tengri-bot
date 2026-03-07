@@ -1,4 +1,5 @@
 """Handler for /tengriguideme and its callback."""
+
 import logging
 import random
 
@@ -30,10 +31,12 @@ async def _get_tengri_menu_role(context: ContextTypes.DEFAULT_TYPE, user_id: int
     if not target_group:
         return False, False, False, False
     from commands_menu import user_grants
+
     has_stfu, has_doxx = user_grants(context.bot_data, target_group, user_id)
     try:
         member = await context.bot.get_chat_member(target_group, user_id)
         from permissions import _has_moderation_rights, _is_real_admin
+
         return _has_moderation_rights(member), _is_real_admin(member), has_stfu, has_doxx
     except Exception:
         return False, False, has_stfu, has_doxx
@@ -81,19 +84,24 @@ def _build_tengri_keyboard(
         ],
     ]
     if is_mod or has_stfu_grant:
-        keyboard.insert(2, [
-            InlineKeyboardButton("STFU", callback_data="help:stfu"),
-            InlineKeyboardButton("UNSTFU", callback_data="help:unstfu"),
-        ])
+        keyboard.insert(
+            2,
+            [
+                InlineKeyboardButton("STFU", callback_data="help:stfu"),
+                InlineKeyboardButton("UNSTFU", callback_data="help:unstfu"),
+            ],
+        )
     if is_real_admin:
         keyboard.append([InlineKeyboardButton("UNFOOL", callback_data="help:unfool")])
     if has_doxx_grant:
         keyboard.append([InlineKeyboardButton("DOXX", callback_data="help:doxx")])
     if is_real_admin:
-        keyboard.append([
-            InlineKeyboardButton("DOXXED", callback_data="help:doxxed"),
-            InlineKeyboardButton("REVOKE DOXX", callback_data="help:revoke_doxx"),
-        ])
+        keyboard.append(
+            [
+                InlineKeyboardButton("DOXXED", callback_data="help:doxxed"),
+                InlineKeyboardButton("REVOKE DOXX", callback_data="help:revoke_doxx"),
+            ]
+        )
     if is_real_admin:
         keyboard.append([InlineKeyboardButton("EDICT OF TENGRI", callback_data="help:edictoftengri")])
     if context and user_id is not None:
@@ -127,6 +135,7 @@ async def cmd_tengriguideme(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         return
     _schedule_notification_delete(context, chat.id, message.message_id)
     from commands_menu import update_dm_commands_for_user
+
     await update_dm_commands_for_user(context.bot, context.bot_data, target_group, sender.id)
     deeplink_markup = _build_deeplink_markup(context)
     try:
@@ -172,6 +181,7 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
         if user:
             from commands_menu import update_dm_commands_for_user
+
             target_group = context.bot_data.get("target_group")
             if target_group:
                 await update_dm_commands_for_user(context.bot, context.bot_data, target_group, user.id)
@@ -183,6 +193,7 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         started = started - {user_id}
         context.bot_data["dm_started_users"] = started
         from state import _save_dm_started_users
+
         _save_dm_started_users(started)
     if user_id and user_id not in started:
         # First-time (or DM was deleted): show full menu as default
@@ -191,8 +202,12 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         try:
             role = await _get_tengri_menu_role(context, user_id)
             reply_markup = _build_tengri_keyboard(
-                context, user_id,
-                is_mod=role[0], is_real_admin=role[1], has_stfu_grant=role[2], has_doxx_grant=role[3],
+                context,
+                user_id,
+                is_mod=role[0],
+                is_real_admin=role[1],
+                has_stfu_grant=role[2],
+                has_doxx_grant=role[3],
             )
             panel_text = random.choice(TENGRIGUIDEME_PANEL_TEXT)
             sent = await context.bot.send_message(chat.id, panel_text, reply_markup=reply_markup)
@@ -200,6 +215,7 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                 set_last_dm_message(context, user_id, chat.id, sent.message_id)
             schedule_replace_with_minimal(context, chat.id, sent.message_id, user_id)
             from state import _save_dm_started_users
+
             started = started | {user_id}
             context.bot_data["dm_started_users"] = started
             _save_dm_started_users(started)
@@ -220,7 +236,8 @@ async def _handle_help_callback(update: Update, context: ContextTypes.DEFAULT_TY
     if not query or not query.data:
         return
     if query.data.startswith("acquire:"):
-        from handlers.acquire_stfu import _handle_acquire_start, _handle_acquire_generate, _handle_acquire_timeleft
+        from handlers.acquire_stfu import _handle_acquire_generate, _handle_acquire_start, _handle_acquire_timeleft
+
         if query.data == "acquire:gen":
             await _handle_acquire_generate(update, context)
         elif query.data == "acquire:timeleft":
@@ -286,8 +303,12 @@ async def _handle_help_callback(update: Update, context: ContextTypes.DEFAULT_TY
             pass
         role = await _get_tengri_menu_role(context, user.id) if user else (False, False, False, False)
         reply_markup = _build_tengri_keyboard(
-            context, user.id if user else None,
-            is_mod=role[0], is_real_admin=role[1], has_stfu_grant=role[2], has_doxx_grant=role[3],
+            context,
+            user.id if user else None,
+            is_mod=role[0],
+            is_real_admin=role[1],
+            has_stfu_grant=role[2],
+            has_doxx_grant=role[3],
         )
         panel_text = random.choice(TENGRIGUIDEME_PANEL_TEXT)
         sent = await context.bot.send_message(chat.id, panel_text, reply_markup=reply_markup)
@@ -327,6 +348,7 @@ async def _handle_help_callback(update: Update, context: ContextTypes.DEFAULT_TY
         user = update.effective_user
         role = await _get_tengri_menu_role(context, user.id) if user else (False, False, False, False)
         from commands_menu import _ADMIN, _granted_commands
+
         if role[0]:
             commands = _ADMIN
         else:

@@ -10,10 +10,8 @@ from PIL import Image
 
 from nsfw.config import (
     ARCHIVE_EXTENSIONS,
-    DOCUMENT_EXTENSIONS,
     IMAGE_EXTENSIONS,
     MAX_FILE_SIZE_MB,
-    NSFW_THRESHOLD,
     VIDEO_EXTENSIONS,
 )
 from nsfw.processors import (

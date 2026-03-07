@@ -1,5 +1,4 @@
 """Tests for spam module."""
-import pytest
 
 from spam import MessageBucket, normalize_text
 

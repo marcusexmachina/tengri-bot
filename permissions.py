@@ -1,9 +1,11 @@
 """Mod/admin checks and ChatPermissions helpers."""
+
 import logging
 
 from telegram import ChatMemberAdministrator, ChatPermissions
 
 logger = logging.getLogger(__name__)
+
 
 def _is_admin_with_zero_permissions(member) -> bool:
     """True if member is administrator with no restrict/delete rights. Such admins are treated as regular members for restrict/mute."""
@@ -66,10 +68,7 @@ def _has_moderation_rights(member) -> bool:
     if _is_admin_with_zero_permissions(member):
         return False
     if isinstance(member, ChatMemberAdministrator):
-        return bool(
-            getattr(member, "can_delete_messages", False)
-            or getattr(member, "can_restrict_members", False)
-        )
+        return bool(getattr(member, "can_delete_messages", False) or getattr(member, "can_restrict_members", False))
     return False
 
 
@@ -95,10 +94,7 @@ def _can_exile(member) -> bool:
     if _is_admin_with_zero_permissions(member):
         return False
     if isinstance(member, ChatMemberAdministrator):
-        return bool(
-            getattr(member, "can_restrict_members", False)
-            and getattr(member, "can_change_info", False)
-        )
+        return bool(getattr(member, "can_restrict_members", False) and getattr(member, "can_change_info", False))
     return False
 
 

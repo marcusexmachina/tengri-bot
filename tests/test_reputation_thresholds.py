@@ -1,4 +1,5 @@
 """Tests for reputation_thresholds module."""
+
 from config import REPUTATION_DEFAULT
 from reputation_thresholds import get_rep, is_fully_muted
 

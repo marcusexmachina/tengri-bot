@@ -13,7 +13,6 @@ from PIL import Image
 from transformers import pipeline
 
 from nsfw.config import (
-    ARCHIVE_EXTENSIONS,
     FFMPEG_MAX_FRAMES,
     FFMPEG_TIMEOUT,
     IMAGE_EXTENSIONS,
@@ -61,10 +60,17 @@ def process_video_file(video_path: str) -> dict | None:
     try:
         # Get video info
         duration_cmd = [
-            "ffprobe", "-v", "error",
-            "-show_entries", "format=duration",
-            "-show_entries", "stream=r_frame_rate",
-            "-select_streams", "v", "-of", "json",
+            "ffprobe",
+            "-v",
+            "error",
+            "-show_entries",
+            "format=duration",
+            "-show_entries",
+            "stream=r_frame_rate",
+            "-select_streams",
+            "v",
+            "-of",
+            "json",
             video_path,
         ]
         result = subprocess.run(
@@ -78,6 +84,7 @@ def process_video_file(video_path: str) -> dict | None:
             return None
 
         import json
+
         info = json.loads(result.stdout.decode())
         duration = 0.0
         frame_rate = 25.0
@@ -97,10 +104,16 @@ def process_video_file(video_path: str) -> dict | None:
         frames_to_extract = min(FFMPEG_MAX_FRAMES, int(duration) if duration else 1) or 1
 
         extract_cmd = [
-            "ffmpeg", "-i", video_path,
-            "-vf", f"fps={fps}",
-            "-vframes", str(frames_to_extract),
-            "-q:v", "2", "-y",
+            "ffmpeg",
+            "-i",
+            video_path,
+            "-vf",
+            f"fps={fps}",
+            "-vframes",
+            str(frames_to_extract),
+            "-q:v",
+            "2",
+            "-y",
             os.path.join(temp_dir, "frame-%d.jpg"),
         ]
         run = subprocess.run(
@@ -114,6 +127,7 @@ def process_video_file(video_path: str) -> dict | None:
             return None
 
         import glob
+
         frame_files = sorted(glob.glob(os.path.join(temp_dir, "frame-*.jpg")))
         last_result = None
         for fp in frame_files:

@@ -1,5 +1,4 @@
 """Tests for config module."""
-import pytest
 
 from config import DURATION_UNITS
 
