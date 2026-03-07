@@ -5,7 +5,8 @@ import time
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from config import STFUPROOF_COOLDOWN_SECONDS, STFUPROOF_DEFAULT_SECONDS
+from config import STFUPROOF_COOLDOWN_SECONDS
+from reputation_thresholds import armor_duration_seconds, can_use_armor, get_rep
 from resolvers import _get_target_user_from_message
 from responses import get_response
 from utils import _format_time_left, _schedule_notification_delete
@@ -28,6 +29,12 @@ async def cmd_stfuproof(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         _schedule_notification_delete(context, chat.id, sent.message_id)
         return
     _schedule_notification_delete(context, chat.id, message.message_id)
+    rep = get_rep(context, chat.id, sender.id)
+    if not can_use_armor(rep):
+        msg = get_response("stfuproof_blocked_low_rep")
+        sent = await message.reply_text(msg)
+        _schedule_notification_delete(context, chat.id, sent.message_id)
+        return
     now = time.time()
     caster_key = (int(chat.id), int(sender.id))
     cooldown = context.bot_data.get("stfuproof_cooldown")
@@ -52,7 +59,9 @@ async def cmd_stfuproof(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     if duration_overrides is None:
         duration_overrides = {}
         context.bot_data["stfuproof_duration_overrides"] = duration_overrides
-    duration = int(duration_overrides.get(recipient_key, STFUPROOF_DEFAULT_SECONDS))
+    recipient_rep = get_rep(context, chat.id, recipient_id)
+    default_duration = armor_duration_seconds(recipient_rep)
+    duration = int(duration_overrides.get(recipient_key, default_duration))
     duration = max(1, duration)
     immunity = context.bot_data.get("stfuproof_immunity")
     if immunity is None:

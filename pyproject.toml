@@ -1,0 +1,33 @@
+[project]
+name = "tengri-bot"
+version = "0.1.0"
+description = "Telegram anti-spam and moderation bot"
+requires-python = ">=3.12"
+dependencies = [
+    "python-telegram-bot[job-queue]",
+    "python-dotenv",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.21",
+]
+
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+exclude = [".venv", "__pycache__", ".git"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W"]
+ignore = []
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["."]

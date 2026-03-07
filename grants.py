@@ -32,7 +32,7 @@ def _load_stfu_grants(path: str) -> dict:
             expires_at = float(item.get("expires_at", 0))
         except (KeyError, TypeError, ValueError):
             continue
-        if expires_at < now:
+        if expires_at > 0 and expires_at < now:
             continue
         grants[(cid, uid)] = {"granted_by": granted_by, "expires_at": expires_at}
     return grants

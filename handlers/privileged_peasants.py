@@ -27,7 +27,7 @@ async def cmd_privileged_peasants(update: Update, context: ContextTypes.DEFAULT_
         _schedule_notification_delete(context, chat.id, sent.message_id)
         return
     _schedule_notification_delete(context, chat.id, message.message_id)
-    grants = context.bot_data.get("stfu_grants") or {}
+    grants = context.bot_data.setdefault("stfu_grants", {})
     now = time.time()
     chat_id = int(chat.id)
     active = [

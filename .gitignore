@@ -4,3 +4,12 @@ __pycache__/
 .env
 *.pyc
 stfu_grants.json
+data/
+
+# Terraform
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.*
+terraform/*.tfvars
+!terraform/*.tfvars.example
+*.pem

@@ -1,6 +1,8 @@
+# Production: use image from ECR (built by CI)
+# Run from /opt/tengri-bot on the host
 services:
   tengri-bot:
-    build: .
+    image: ${ECR_REGISTRY}/tengri-bot:latest
     container_name: tengri-bot
     restart: unless-stopped
     env_file:
