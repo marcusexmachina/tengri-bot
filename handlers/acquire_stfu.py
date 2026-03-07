@@ -13,7 +13,13 @@ from telegram.ext import ContextTypes
 from grants import _save_stfu_grants
 from reputation_thresholds import acquire_session_seconds, can_acquire_stfu, get_rep
 from state import _load_acquired_stfu, _save_acquired_stfu, _save_acquire_pending
-from utils import _schedule_notification_delete
+from utils import (
+    _schedule_notification_delete,
+    ask_tengri_button,
+    delete_last_dm_message,
+    schedule_replace_with_minimal,
+    set_last_dm_message,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -96,9 +102,18 @@ async def _handle_acquire_start(update: Update, context: ContextTypes.DEFAULT_TY
     rep = get_rep(context, target_group, user.id)
     if not can_acquire_stfu(rep):
         from responses import get_response
+        await delete_last_dm_message(context, user.id)
+        try:
+            await query.message.delete()
+        except Exception:
+            pass
         msg = get_response("acquire_stfu_blocked_low_rep")
-        await query.message.reply_text(msg)
+        markup = InlineKeyboardMarkup([[ask_tengri_button()]])
+        sent = await context.bot.send_message(chat.id, msg, reply_markup=markup)
+        set_last_dm_message(context, user.id, chat.id, sent.message_id)
+        schedule_replace_with_minimal(context, chat.id, sent.message_id, user.id)
         return
+    await delete_last_dm_message(context, user.id)
     try:
         await query.message.delete()
     except Exception:
@@ -115,10 +130,13 @@ async def _handle_acquire_start(update: Update, context: ContextTypes.DEFAULT_TY
     _save_acquire_pending(pending)
     from responses import get_response
     msg = get_response("acquire_stfu_password_intro")
-    markup = InlineKeyboardMarkup(
-        [[InlineKeyboardButton("Generate", callback_data="acquire:gen")]]
-    )
-    await query.message.reply_text(msg, reply_markup=markup, parse_mode="HTML")
+    markup = InlineKeyboardMarkup([
+        [InlineKeyboardButton("Generate", callback_data="acquire:gen")],
+        [ask_tengri_button()],
+    ])
+    sent = await context.bot.send_message(chat.id, msg, reply_markup=markup, parse_mode="HTML")
+    set_last_dm_message(context, user.id, chat.id, sent.message_id)
+    schedule_replace_with_minimal(context, chat.id, sent.message_id, user.id)
 
 
 async def _handle_acquire_generate(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -134,21 +152,43 @@ async def _handle_acquire_generate(update: Update, context: ContextTypes.DEFAULT
     entry = pending.get(user.id)
     if not entry:
         from responses import get_response
+        await delete_last_dm_message(context, user.id)
+        try:
+            await query.message.delete()
+        except Exception:
+            pass
         msg = get_response("acquire_stfu_expired")
-        await query.message.reply_text(msg)
+        markup = InlineKeyboardMarkup([[ask_tengri_button()]])
+        sent = await context.bot.send_message(chat.id, msg, reply_markup=markup)
+        set_last_dm_message(context, user.id, chat.id, sent.message_id)
         return
     now = time.time()
     if now - entry["created_at"] > ACQUIRE_PENDING_EXPIRE_SECONDS:
         del pending[user.id]
         from responses import get_response
+        await delete_last_dm_message(context, user.id)
+        try:
+            await query.message.delete()
+        except Exception:
+            pass
         msg = get_response("acquire_stfu_expired")
-        await query.message.reply_text(msg)
+        markup = InlineKeyboardMarkup([[ask_tengri_button()]])
+        sent = await context.bot.send_message(chat.id, msg, reply_markup=markup)
+        set_last_dm_message(context, user.id, chat.id, sent.message_id)
         return
     # If this session is already completed, nudge user to redeem instead of generating more.
     if entry.get("completed"):
         from responses import get_response
+        await delete_last_dm_message(context, user.id)
+        try:
+            await query.message.delete()
+        except Exception:
+            pass
         msg = get_response("acquire_stfu_redeem_instruction")
-        await query.message.reply_text(msg, parse_mode="HTML")
+        markup = InlineKeyboardMarkup([[ask_tengri_button()]])
+        sent = await context.bot.send_message(chat.id, msg, parse_mode="HTML", reply_markup=markup)
+        set_last_dm_message(context, user.id, chat.id, sent.message_id)
+        schedule_replace_with_minimal(context, chat.id, sent.message_id, user.id)
         return
     await query.answer()
     from responses import get_response
@@ -158,19 +198,34 @@ async def _handle_acquire_generate(update: Update, context: ContextTypes.DEFAULT
     if not STFU_PASSWORD_INCREMENTAL:
         # If a password already exists for this session, just remind them to redeem.
         if entry.get("password"):
+            await delete_last_dm_message(context, user.id)
+            try:
+                await query.message.delete()
+            except Exception:
+                pass
             msg = get_response("acquire_stfu_redeem_instruction")
-            await query.message.reply_text(msg, parse_mode="HTML")
+            markup = InlineKeyboardMarkup([[ask_tengri_button()]])
+            sent = await context.bot.send_message(chat.id, msg, parse_mode="HTML", reply_markup=markup)
+            set_last_dm_message(context, user.id, chat.id, sent.message_id)
+            schedule_replace_with_minimal(context, chat.id, sent.message_id, user.id)
             return
         length = random.randint(ACQUIRE_PASSWORD_MIN_LENGTH, ACQUIRE_PASSWORD_MAX_LENGTH)
         password = "".join(random.choice(chars) for _ in range(length))
         entry["password"] = password
         entry["completed"] = True
         _save_acquire_pending(pending)
-        # Show the full password once, then generic redeem instructions.
+        await delete_last_dm_message(context, user.id)
+        try:
+            await query.message.delete()
+        except Exception:
+            pass
         msg_pwd = f"Your password: <code>{password}</code>"
-        await query.message.reply_text(msg_pwd, parse_mode="HTML")
         msg2 = get_response("acquire_stfu_redeem_instruction")
-        await query.message.reply_text(msg2, parse_mode="HTML")
+        combined = f"{msg_pwd}\n\n{msg2}"
+        markup = InlineKeyboardMarkup([[ask_tengri_button()]])
+        sent = await context.bot.send_message(chat.id, combined, parse_mode="HTML", reply_markup=markup)
+        set_last_dm_message(context, user.id, chat.id, sent.message_id)
+        schedule_replace_with_minimal(context, chat.id, sent.message_id, user.id)
         return
 
     # Incremental mode: one-character-at-a-time, hidden total length.
@@ -197,10 +252,18 @@ async def _handle_acquire_generate(update: Update, context: ContextTypes.DEFAULT
             await context.bot.delete_message(chat_id=chat.id, message_id=sent.message_id)
         except Exception:
             pass
+        await delete_last_dm_message(context, user.id)
+        try:
+            await query.message.delete()
+        except Exception:
+            pass
         msg1 = get_response("acquire_stfu_password_saved")
         msg2 = get_response("acquire_stfu_redeem_instruction")
-        await query.message.reply_text(msg1, parse_mode="HTML")
-        await query.message.reply_text(msg2, parse_mode="HTML")
+        combined = f"{msg1}\n\n{msg2}"
+        markup = InlineKeyboardMarkup([[ask_tengri_button()]])
+        sent = await context.bot.send_message(chat.id, combined, parse_mode="HTML", reply_markup=markup)
+        set_last_dm_message(context, user.id, chat.id, sent.message_id)
+        schedule_replace_with_minimal(context, chat.id, sent.message_id, user.id)
         entry["completed"] = True
         _save_acquire_pending(pending)
         return
@@ -229,13 +292,29 @@ async def _handle_acquire_timeleft(update: Update, context: ContextTypes.DEFAULT
     granted_by = grant.get("granted_by")
     if exp == 0 and granted_by is not None and granted_by != user.id:
         from responses import get_response
+        await delete_last_dm_message(context, user.id)
+        try:
+            await query.message.delete()
+        except Exception:
+            pass
         msg = get_response("acquire_permanent_admin")
-        await query.message.reply_text(msg)
+        markup = InlineKeyboardMarkup([[ask_tengri_button()]])
+        sent = await context.bot.send_message(chat.id, msg, reply_markup=markup)
+        set_last_dm_message(context, user.id, chat.id, sent.message_id)
+        schedule_replace_with_minimal(context, chat.id, sent.message_id, user.id)
         return
     if exp == 0:
         from responses import get_response
+        await delete_last_dm_message(context, user.id)
+        try:
+            await query.message.delete()
+        except Exception:
+            pass
         msg = get_response("acquire_timeleft_permanent")
-        await query.message.reply_text(msg)
+        markup = InlineKeyboardMarkup([[ask_tengri_button()]])
+        sent = await context.bot.send_message(chat.id, msg, reply_markup=markup)
+        set_last_dm_message(context, user.id, chat.id, sent.message_id)
+        schedule_replace_with_minimal(context, chat.id, sent.message_id, user.id)
         return
     import time
     now = time.time()
@@ -243,9 +322,17 @@ async def _handle_acquire_timeleft(update: Update, context: ContextTypes.DEFAULT
         return
     from utils import _format_time_left
     from responses import get_response
+    await delete_last_dm_message(context, user.id)
+    try:
+        await query.message.delete()
+    except Exception:
+        pass
     left = _format_time_left(exp - now)
     msg = get_response("acquire_timeleft", time_left=left)
-    await query.message.reply_text(msg)
+    markup = InlineKeyboardMarkup([[ask_tengri_button()]])
+    sent = await context.bot.send_message(chat.id, msg, reply_markup=markup)
+    set_last_dm_message(context, user.id, chat.id, sent.message_id)
+    schedule_replace_with_minimal(context, chat.id, sent.message_id, user.id)
 
 
 async def cmd_redeem(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -337,3 +424,7 @@ async def cmd_redeem(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         await context.bot.send_message(target_group, group_msg, parse_mode="HTML")
     except Exception as e:
         logger.warning("Failed to notify group of acquire: %s", e)
+    from commands_menu import update_dm_commands_for_user, update_user_commands, user_grants
+    _, has_doxx = user_grants(context.bot_data, target_group, user.id)
+    await update_user_commands(context.bot, target_group, user.id, has_stfu_grant=True, has_doxx_grant=has_doxx)
+    await update_dm_commands_for_user(context.bot, context.bot_data, target_group, user.id)

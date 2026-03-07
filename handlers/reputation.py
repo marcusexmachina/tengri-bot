@@ -1,4 +1,6 @@
 """Handlers for /based and /cunt reputation commands."""
+import asyncio
+import html
 import logging
 import time
 
@@ -254,6 +256,89 @@ def _get_howbasedami_checkpoint(rep: int) -> str:
     if rep >= 10:
         return get_response("howbasedami_10", pts=rep)
     return get_response("howbasedami_low", pts=rep)
+
+
+# --- HOWBASEDISEVERYONE (rollback: remove handler, bot.py, commands_menu, __init__) ---
+_HOWBASEDISEVERYONE_CAP = 30
+_BASED_THRESHOLD = 100
+
+
+async def cmd_howbasediseveryone(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Anyone can invoke. Lists all users with rep: BASED (>=100) and CUNTS (<100)."""
+    message = update.effective_message
+    chat = update.effective_chat
+    if not message or not chat:
+        return
+    target_group = context.bot_data.get("target_group")
+    if not target_group or chat.id != target_group:
+        return
+    _schedule_notification_delete(context, chat.id, message.message_id)
+
+    reputation = context.bot_data.get("reputation")
+    if reputation is None:
+        reputation = _load_reputation()
+        context.bot_data["reputation"] = reputation
+
+    entries = [
+        (user_id, pts)
+        for (cid, user_id), pts in reputation.items()
+        if cid == target_group
+    ]
+    if not entries:
+        sent = await message.reply_text("No peasants in the record.")
+        _schedule_notification_delete(context, chat.id, sent.message_id)
+        return
+
+    based = sorted([e for e in entries if e[1] >= _BASED_THRESHOLD], key=lambda x: -x[1])
+    cunts = sorted([e for e in entries if e[1] < _BASED_THRESHOLD], key=lambda x: -x[1])
+
+    async def _get_display(bot, chat_id: int, user_id: int) -> str:
+        try:
+            member = await bot.get_chat_member(chat_id, user_id)
+            u = member.user
+            if u.username:
+                return f"@{u.username}"
+            if u.first_name:
+                return html.escape(u.first_name)
+        except Exception:
+            pass
+        return f"User {user_id}"
+
+    async def _resolve_all(user_ids: list[int]) -> dict[int, str]:
+        out = {}
+        sem = asyncio.Semaphore(10)
+        async def one(uid):
+            async with sem:
+                disp = await _get_display(context.bot, target_group, uid)
+                out[uid] = disp
+        await asyncio.gather(*[one(uid) for uid in user_ids])
+        return out
+
+    all_ids = list({uid for uid, _ in entries})
+    display_map = await _resolve_all(all_ids)
+
+    def _format_section_resolved(items: list, cap: int) -> str:
+        lines = []
+        for user_id, pts in items[:cap]:
+            disp = display_map.get(user_id, f"User {user_id}")
+            lines.append(f"{disp}: {pts} points")
+        if len(items) > cap:
+            lines.append(f"... and {len(items) - cap} more")
+        return "\n".join(lines) if lines else ""
+
+    parts = ["<b>LIST OF PEASANTS:</b>", ""]
+    if based:
+        parts.append("<b>BASED:</b>")
+        parts.append(_format_section_resolved(based, _HOWBASEDISEVERYONE_CAP))
+        parts.append("")
+    if cunts:
+        parts.append("<b>CUNTS:</b>")
+        parts.append(_format_section_resolved(cunts, _HOWBASEDISEVERYONE_CAP))
+
+    msg = "\n".join(parts).strip()
+    sent = await message.reply_text(msg, parse_mode="HTML")
+    _schedule_notification_delete(context, chat.id, sent.message_id)
+# --- END HOWBASEDISEVERYONE ---
 
 
 async def cmd_howbasedami(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:

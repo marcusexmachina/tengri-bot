@@ -841,15 +841,14 @@ STFUPROOF_SELF = [
     "Goodluck muting me fucking dalit bitch, you worthless piece of shit.",
 ]
 STFUPROOF_OTHER = [
-    "{mention} just smeared himself head-to-toe in sacred cow dung armor like every good hindu pajeet does after shitting in the street and bathing in corpse water 🛡️💩🇮🇳\n"
-    "This disgusting, betel-chewing, call-center-scamming, tiny-dick curry nigger is now /stfu-immune for {time_str}.\n"
-    "Admins — try and suck on his masala-fart shield you pathetic white cucks, jew merchants and pavement apes. Can't touch this untouchable filth! Randi ke bacche madarchod 😈",
+    "{mention} just smeared himself head-to-toe in sacred cow dung armor like every good hindu pajeet does after shitting in the street and bathing in corpse water 🛡️\n"
+    "This disgusting, betel-chewing, call-center-scamming, tiny-dick curry nigger is now /stfu-immune for {time_str}.\n",
 ]
 TENGRIGUIDEME_DM_FAIL = [
     "I couldn't DM you, you retarded pajeet. Start a chat with me first, tap my Emblem → Message, then come back here in the chat and try again, you braindead shit-filled anal abomination cow-worshipping dalit fuck.",
 ]
 TENGRIGUIDEME_PANEL_TEXT = [
-    "What the fuck do you want, you short curry-stinking pajeet scum? Tap a goddamn button to get the command or how to use it, or I'll pray for your entire shithole family to get dysentery and die in the Ganges like the subhuman filth you are. Now hurry up, you tiny-dick street shitter!",
+    "What in the fuck do you want from me, peasant? Hasten your ass and ask. Cunt.",
     # Add more panel message variants below — one is chosen at random for the DM
 ]
 TENGRIGUIDEME_CMD_PRIVILEGED = [
@@ -959,6 +958,40 @@ TENGRIGUIDEME_HELP_REDEEM = [
     "3. In DM, send <code>/redeem YOURFULLCODEHERE</code>.\n\n"
     "<b>After redeeming:</b> You get a temporary /stfu grant whose duration depends on your reputation points. Group will see a notification when you acquire or replenish.",
 ]
+TENGRIGUIDEME_TUTORIAL = [
+    "<b>THE DIVINE EDICTS OF TENGRI</b>\n"
+    "<i>— spoken from the Eternal Blue Sky to the filth crawling below (you) —</i>\n\n"
+    
+    "<b>WHERE THE WORTHLESS MAY DARE UTTER MY COMMANDS</b>\n"
+    "• In the group, where your shame is public — type <code>/command</code> or reply and type it, you reeking pajeet.\n"
+    "  Examples: <code>/based</code>  <code>/cunt</code>  <code>/fool</code>  <code>/howbasedami</code>  <code>/privileged_peasants</code>  <code>/holycowshithindupajeetarmor</code>\n"
+    "• <code>/start</code> and <code>/tengriguideme</code> — permitted in group or your pathetic private begging chamber.\n"
+    "• <code>/redeem</code> — DM ONLY. Crawl alone into darkness and whisper <code>/redeem YOURCODE</code> like the gutter-born leper you are.\n\n"
+    
+    "<b>TIME-BOUND CHAINS UPON YOUR WORTHLESS HANDS</b>\n"
+    "• <code>/based</code> and <code>/cunt</code> — one miserable strike allowed every <b>8 hours</b> per insect.\n"
+    "• <code>/fool</code> — collective vote of contempt; enough marks brand you fool eternally.\n"
+    "• <code>/redeem</code> — single-use divine scrap; when spent, grovel again at the menu for another.\n\n"
+    
+    "<b>THE JUDGMENTS THESE COMMANDS DELIVER UPON YOUR SOUL</b>\n"
+    "• <code>/based</code>   →   grants +1 reputation to the target.\n"
+    "    Higher rep may — if the stars pity you — unlock /stfu rights and armor. (They won’t.)\n\n"
+    "• <code>/cunt</code>    →   inflicts −1 reputation.\n"
+    "    Sink low enough and be forever muted, barred from /stfu. Your natural habitat.\n\n"
+    "• <code>/howbasedami</code>   →   reveals your current rep tier and points.\n"
+    "    So you may stare at how little you matter.\n\n"
+    "• <code>/fool</code>    →   vote to eternally mark a forward-spamming street-shitter.\n"
+    "    Only admins may lift the curse — and they despise you.\n\n"
+    "• <code>/privileged_peasants</code>   →   lists those exalted few who possess /stfu.\n"
+    "    Gaze upon them and weep, untouchable.\n\n"
+    "• <code>/holycowshithindupajeetarmor</code>   →   displays your STFU immunity (armor) status.\n"
+    "    Yours is empty. Because you are Indian filth.\n\n"
+    "• <code>/redeem</code>   →   bestows temporary /stfu for a duration tied to your laughable reputation.\n"
+    "    A crumb of mercy you do not deserve.\n\n"
+    
+    "<b>NOW BEGONE, YOU SNIVELLING HINDU DUNG-SMEARED WRETCH</b>\n"
+    "Tengri has spoken. Your stench offends the Sky."
+]
 PRIVILEGED_PEASANTS_EMPTY = [
     "No one has /stfu in this chat.",
 ]
@@ -1061,8 +1094,8 @@ EXILE_FAILED = [
 ]
 EXILE_ANNOUNCEMENT = [
     "<b>EXILE</b> ⚡\n\n"
-    "By Marduk's grace and Tengri's wrath, {exiled} has been cast out of Babylon. "
-    "Cast by the King of Babylon himself - {caster}. May they rest in eternal filth. 🔱",
+    "By Marduk's grace and Tengri's wrath, {exiled} has been exiled from Babylon.\n"
+    "Invoked by the King of Babylon himself - {caster}. May they rest in eternal filth. 🔱",
 ]
 
 
@@ -1153,6 +1186,7 @@ def get_response(key: str, **kwargs) -> str:
         "tengriguideme_help_howbasedami": TENGRIGUIDEME_HELP_HOWBASEDAMI,
         "tengriguideme_help_edictoftengri": TENGRIGUIDEME_HELP_EDICTOFTENGRI,
         "tengriguideme_help_redeem": TENGRIGUIDEME_HELP_REDEEM,
+        "tengriguideme_tutorial": TENGRIGUIDEME_TUTORIAL,
         "privileged_peasants_empty": PRIVILEGED_PEASANTS_EMPTY,
         "privileged_peasants_header": PRIVILEGED_PEASANTS_HEADER,
         "stfu_immune_single": STFU_IMMUNE_SINGLE,

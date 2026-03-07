@@ -1,0 +1,16 @@
+# Production: use image from ECR (built by CI)
+# Run from /opt/tengri-bot on the host
+services:
+  tengri-bot:
+    image: ${ECR_REGISTRY}/tengri-bot:latest
+    container_name: tengri-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - STATE_FILE=/app/data/stfu_grants.json
+    volumes:
+      - tengri-bot-data:/app/data
+
+volumes:
+  tengri-bot-data:

@@ -63,6 +63,10 @@ async def cmd_doxxed(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     key = (chat.id, target_user.id)
     grants[key] = {"granted_by": sender.id, "expires_at": time.time() + 365 * 24 * 60 * 60}
     _save_doxx_grants(grants)
+    from commands_menu import update_dm_commands_for_user, update_user_commands, user_grants
+    has_stfu, _ = user_grants(context.bot_data, chat.id, target_user.id)
+    await update_user_commands(context.bot, chat.id, target_user.id, has_stfu_grant=has_stfu, has_doxx_grant=True)
+    await update_dm_commands_for_user(context.bot, context.bot_data, chat.id, target_user.id)
     msg = get_response("doxxed_done", target=target_user.mention_html())
     sent = await message.reply_text(msg, parse_mode="HTML")
     _schedule_notification_delete(context, chat.id, sent.message_id)
@@ -197,6 +201,10 @@ async def cmd_revoke_doxx(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     if key in grants:
         del grants[key]
         _save_doxx_grants(grants)
+        from commands_menu import update_dm_commands_for_user, update_user_commands, user_grants
+        has_stfu, _ = user_grants(context.bot_data, chat.id, target_user.id)
+        await update_user_commands(context.bot, chat.id, target_user.id, has_stfu_grant=has_stfu, has_doxx_grant=False)
+        await update_dm_commands_for_user(context.bot, context.bot_data, chat.id, target_user.id)
         msg = get_response("revoke_doxx_done", mention=target_user.mention_html())
     else:
         msg = get_response("revoke_doxx_not_granted", mention=target_user.mention_html())

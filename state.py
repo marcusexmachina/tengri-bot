@@ -282,6 +282,36 @@ def _load_acquire_pending() -> dict:
     return result
 
 
+def _load_dm_started_users() -> set[int]:
+    """Load user IDs who have completed first /start in DM. Used to show minimal vs full menu."""
+    path = _state_path("STATE_FILE", "dm_started_users.json")
+    if not path or not os.path.isfile(path):
+        return set()
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            raw = json.load(f)
+    except (OSError, json.JSONDecodeError) as e:
+        logger.warning("Failed to load dm_started_users from %s: %s", path, e)
+        return set()
+    if not isinstance(raw, list):
+        return set()
+    return {int(x) for x in raw if isinstance(x, (int, str)) and str(x).isdigit()}
+
+
+def _save_dm_started_users(user_ids: set[int]) -> None:
+    path = _state_path("STATE_FILE", "dm_started_users.json")
+    if not path:
+        return
+    try:
+        parent = os.path.dirname(path)
+        if parent:
+            os.makedirs(parent, exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(list(user_ids), f, indent=2)
+    except OSError as e:
+        logger.warning("Failed to save dm_started_users to %s: %s", path, e)
+
+
 def _save_acquire_pending(pending: dict) -> None:
     """Persist pending STFU password sessions. Call after add/update/delete."""
     path = _state_path("STATE_FILE", "acquire_pending.json")

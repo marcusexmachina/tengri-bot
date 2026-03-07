@@ -148,6 +148,10 @@ async def cmd_grant_stfu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         context.bot_data["stfu_grants"] = grants
     grants[(chat.id, target_user.id)] = {"granted_by": sender.id, "expires_at": 0}
     _save_stfu_grants(context.bot_data.get("state_file") or "", grants)
+    from commands_menu import update_dm_commands_for_user, update_user_commands, user_grants
+    _, has_doxx = user_grants(context.bot_data, chat.id, target_user.id)
+    await update_user_commands(context.bot, chat.id, target_user.id, has_stfu_grant=True, has_doxx_grant=has_doxx)
+    await update_dm_commands_for_user(context.bot, context.bot_data, chat.id, target_user.id)
     msg = get_response("grant_stfu_done_permanent", target=target_user.mention_html(), sender=sender.mention_html())
     sent = await message.reply_text(msg, parse_mode="HTML")
     _schedule_notification_delete(context, chat.id, sent.message_id)
@@ -185,6 +189,11 @@ async def cmd_revoke_stfu(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         for k in keys_to_remove:
             del grants[k]
         _save_stfu_grants(context.bot_data.get("state_file") or "", grants)
+        from commands_menu import update_dm_commands_for_user, update_user_commands, user_grants
+        for (_cid, uid) in keys_to_remove:
+            _, has_doxx = user_grants(context.bot_data, chat.id, uid)
+            await update_user_commands(context.bot, chat.id, uid, has_stfu_grant=False, has_doxx_grant=has_doxx)
+            await update_dm_commands_for_user(context.bot, context.bot_data, chat.id, uid)
         msg = get_response("revoke_stfu_all_done", count=len(keys_to_remove)) if keys_to_remove else get_response("revoke_stfu_all_empty")
         sent = await message.reply_text(msg)
         _schedule_notification_delete(context, chat.id, sent.message_id)
@@ -200,6 +209,10 @@ async def cmd_revoke_stfu(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     if key in grants:
         del grants[key]
         _save_stfu_grants(context.bot_data.get("state_file") or "", grants)
+        from commands_menu import update_dm_commands_for_user, update_user_commands, user_grants
+        _, has_doxx = user_grants(context.bot_data, chat.id, target_user.id)
+        await update_user_commands(context.bot, chat.id, target_user.id, has_stfu_grant=False, has_doxx_grant=has_doxx)
+        await update_dm_commands_for_user(context.bot, context.bot_data, chat.id, target_user.id)
         msg = get_response("revoke_stfu_user_done", mention=target_user.mention_html())
         sent = await message.reply_text(msg, parse_mode="HTML")
     else:
@@ -275,6 +288,10 @@ async def cmd_stfu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         )
         if not grant or grant.get("expires_at", 0) < now:
             logger.info("cmd_stfu: sender has no mod rights and no valid grant -> not_admin_mute")
+            from commands_menu import update_dm_commands_for_user, update_user_commands, user_grants
+            _, has_doxx = user_grants(context.bot_data, chat.id, sender.id)
+            await update_user_commands(context.bot, chat.id, sender.id, has_stfu_grant=False, has_doxx_grant=has_doxx)
+            await update_dm_commands_for_user(context.bot, context.bot_data, chat.id, sender.id)
             msg = get_response("not_admin_mute", mention=sender.mention_html())
             sent = await message.reply_text(msg, parse_mode="HTML")
             _schedule_notification_delete(context, chat.id, sent.message_id)

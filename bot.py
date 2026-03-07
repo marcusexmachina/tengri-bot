@@ -5,12 +5,12 @@ import sys
 from collections import defaultdict
 
 from dotenv import load_dotenv
-from telegram import BotCommand, Update
+from telegram import BotCommand, BotCommandScopeAllChatAdministrators, BotCommandScopeDefault, Update
 from telegram.error import Conflict
 from telegram.ext import ApplicationBuilder, CallbackQueryHandler, CommandHandler, ContextTypes, MessageHandler, filters
 
 from grants import _load_stfu_grants
-from state import _load_acquire_pending, _load_acquired_stfu, _load_doxx_grants, _load_doxx_hashes, _load_fool_marked, _load_reputation, _load_reputation_votes
+from state import _load_acquire_pending, _load_acquired_stfu, _load_doxx_grants, _load_doxx_hashes, _load_dm_started_users, _load_fool_marked, _load_reputation, _load_reputation_votes
 from handlers import (
     _handle_help_callback,
     cmd_redeem,
@@ -19,6 +19,7 @@ from handlers import (
     cmd_based,
     cmd_cunt,
     cmd_howbasedami,
+    cmd_howbasediseveryone,
     cmd_edictoftengri,
     cmd_exile,
     cmd_fool,
@@ -57,7 +58,23 @@ def main() -> None:
     token, group_id = load_env()
 
     async def _set_commands(application):
-        await application.bot.set_my_commands([
+        # Default scope: everyone (group members, DMs) — common commands only
+        common_commands = [
+            BotCommand("start", "Open Tengri menu"),
+            BotCommand("tengriguideme", "Open Tengri menu in DM"),
+            BotCommand("based", "+1 reputation"),
+            BotCommand("cunt", "-1 reputation"),
+            BotCommand("howbasedami", "Check your reputation"),
+            BotCommand("howbasediseveryone", "List all peasants by rep"),
+            BotCommand("fool", "Mark forward spammer"),
+            BotCommand("privileged_peasants", "Who has /stfu"),
+            BotCommand("redeem", "Redeem password for /stfu (DM)"),
+            BotCommand("holycowshithindupajeetarmor", "STFU immunity"),
+        ]
+        await application.bot.set_my_commands(common_commands, scope=BotCommandScopeDefault())
+
+        # Admin scope: only visible to chat administrators (group/supergroup)
+        admin_commands = [
             BotCommand("start", "Open Tengri menu"),
             BotCommand("stfu", "Mute user(s)"),
             BotCommand("unstfu", "Unmute user(s)"),
@@ -73,12 +90,14 @@ def main() -> None:
             BotCommand("based", "+1 reputation"),
             BotCommand("cunt", "-1 reputation"),
             BotCommand("howbasedami", "Check your reputation"),
+            BotCommand("howbasediseveryone", "List all peasants by rep"),
             BotCommand("edictoftengri", "Set reputation (admin)"),
             BotCommand("tengriguideme", "Open Tengri menu in DM"),
             BotCommand("redeem", "Redeem password for /stfu (DM)"),
             BotCommand("privileged_peasants", "Who has /stfu"),
             BotCommand("holycowshithindupajeetarmor", "STFU immunity"),
-        ])
+        ]
+        await application.bot.set_my_commands(admin_commands, scope=BotCommandScopeAllChatAdministrators())
     app = ApplicationBuilder().token(token).post_init(_set_commands).build()
     app.bot_data["target_group"] = group_id
     app.bot_data["spam_state"] = defaultdict(lambda: defaultdict(MessageBucket))
@@ -93,6 +112,7 @@ def main() -> None:
     app.bot_data["acquire_pending"] = _load_acquire_pending()
     app.bot_data["reputation"] = _load_reputation()
     app.bot_data["reputation_votes"] = _load_reputation_votes()
+    app.bot_data["dm_started_users"] = _load_dm_started_users()
     app.bot_data["username_cache"] = {}
     app.bot_data["stfuproof_immunity"] = {}
     app.bot_data["stfuproof_cooldown"] = {}
@@ -114,19 +134,21 @@ def main() -> None:
     app.add_handler(CommandHandler("based", cmd_based))
     app.add_handler(CommandHandler("cunt", cmd_cunt))
     app.add_handler(CommandHandler("howbasedami", cmd_howbasedami))
+    app.add_handler(CommandHandler("howbasediseveryone", cmd_howbasediseveryone))
     app.add_handler(CommandHandler("edictoftengri", cmd_edictoftengri))
     app.add_handler(CommandHandler("tengriguideme", cmd_tengriguideme))
     app.add_handler(CommandHandler("redeem", cmd_redeem))
+    # Match help:*, cmd:*, and acquire: callbacks. Flexible so new help/cmd buttons work without updating this.
     app.add_handler(
         CallbackQueryHandler(
             _handle_help_callback,
-            pattern=r"^(help:(stfu|unstfu|fool|unfool|doxx|doxxed|revoke_doxx|based|cunt|howbasedami|edictoftengri|redeem|back)|cmd:(privileged_peasants|holycowshithindupajeetarmor)|acquire:(start|gen|timeleft|blocked))$",
+            pattern=r"^(help:[a-z_]+|cmd:[a-z_]+|acquire:(start|gen|timeleft|blocked))$",
         )
     )
     app.add_handler(CommandHandler("privileged_peasants", cmd_privileged_peasants))
     app.add_handler(CommandHandler("holycowshithindupajeetarmor", cmd_stfuproof))
 
-    def on_error(_update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    async def on_error(_update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
         if context.error and isinstance(context.error, Conflict):
             logging.getLogger(__name__).error(
                 "Telegram 409 Conflict: another instance is already polling (Docker or another 'python bot.py'). "
