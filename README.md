@@ -17,6 +17,7 @@ Telegram anti-spam and moderation bot for a single group. Features:
    - `source .venv/bin/activate`
 2. Install dependencies (includes optional `job-queue` for reliable 30s auto-deletes):
    - `pip install -r requirements.txt`
+   - For NSFW detection: `pip install -r requirements-nsfw.txt` (adds torch/transformers, ~4GB).
 3. Copy `.env.example` to `.env` and fill in:
    - `TELEGRAM_TOKEN=...` (from [@BotFather](https://t.me/BotFather))
    - `TELEGRAM_GROUP=...` (target group chat ID)
@@ -26,6 +27,11 @@ Telegram anti-spam and moderation bot for a single group. Features:
 ## Run (local)
 
 `python bot.py`
+
+## Docker
+
+Default image is **slim** (no torch/transformers). To build with NSFW support:  
+`docker build --build-arg INSTALL_NSFW=true -t tengri-bot .`
 
 ## Run with Docker Compose
 

@@ -1,0 +1,7 @@
+# Install only when building with INSTALL_NSFW=true (~4GB)
+torch
+transformers
+Pillow
+pdf2image
+python-docx
+rarfile

@@ -1,10 +1,4 @@
 python-telegram-bot[job-queue]
 python-dotenv
 
-# NSFW detection (optional; set NSFW_ENABLED=true to use)
-torch
-transformers
-Pillow
-pdf2image
-python-docx
-rarfile
+# NSFW deps are in requirements-nsfw.txt; install via Docker build arg INSTALL_NSFW=true
