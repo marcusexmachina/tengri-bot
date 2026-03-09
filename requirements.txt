@@ -1,4 +1,5 @@
 python-telegram-bot[job-queue]
 python-dotenv
+deep-translator
 
 # NSFW deps are in requirements-nsfw.txt; install via Docker build arg INSTALL_NSFW=true
