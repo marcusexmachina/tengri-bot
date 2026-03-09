@@ -14,7 +14,6 @@ from grants import _load_stfu_grants
 from handlers import (
     _handle_help_callback,
     cmd_based,
-    cmd_translate,
     cmd_cunt,
     cmd_doxx,
     cmd_doxxed,
@@ -33,6 +32,7 @@ from handlers import (
     cmd_stfu,
     cmd_stfuproof,
     cmd_tengriguideme,
+    cmd_translate,
     cmd_unfool,
     cmd_unstfu,
 )
