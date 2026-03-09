@@ -15,8 +15,10 @@ from handlers.stfu import (
 )
 from handlers.stfuproof import cmd_stfuproof
 from handlers.tengriguideme import _handle_help_callback, cmd_start, cmd_tengriguideme
+from handlers.translate import cmd_translate
 
 __all__ = [
+    "cmd_translate",
     "cmd_unstfu",
     "cmd_stfu",
     "cmd_grant_stfu",

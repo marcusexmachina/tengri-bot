@@ -14,6 +14,7 @@ from grants import _load_stfu_grants
 from handlers import (
     _handle_help_callback,
     cmd_based,
+    cmd_translate,
     cmd_cunt,
     cmd_doxx,
     cmd_doxxed,
@@ -72,6 +73,7 @@ def main() -> None:
         common_commands = [
             BotCommand("start", "Open Tengri menu"),
             BotCommand("tengriguideme", "Open Tengri menu in DM"),
+            BotCommand("translate", "Translate replied message (default: English)"),
             BotCommand("based", "+1 reputation"),
             BotCommand("cunt", "-1 reputation"),
             BotCommand("howbasedami", "Check your reputation"),
@@ -149,6 +151,8 @@ def main() -> None:
     app.add_handler(CommandHandler("edictoftengri", cmd_edictoftengri))
     app.add_handler(CommandHandler("tengriguideme", cmd_tengriguideme))
     app.add_handler(CommandHandler("redeem", cmd_redeem))
+    app.add_handler(CommandHandler("translate", cmd_translate))
+    app.add_handler(CommandHandler("tr", cmd_translate))
     # Match help:*, cmd:*, and acquire: callbacks. Flexible so new help/cmd buttons work without updating this.
     app.add_handler(
         CallbackQueryHandler(

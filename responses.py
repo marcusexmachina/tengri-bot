@@ -1095,6 +1095,12 @@ EXILE_ANNOUNCEMENT = [
     "Invoked by the King of Babylon himself - {caster}. May they rest in eternal filth. 🔱",
 ]
 
+# Translate
+TRANSLATE_REPLY_REQUIRED = ["Reply to a message to translate it."]
+TRANSLATE_NO_TEXT = ["That message has no text to translate."]
+TRANSLATE_TOO_LONG = ["Message too long to translate (max 5000 chars)."]
+TRANSLATE_FAILED = ["Translation failed."]
+
 
 def get_response(key: str, **kwargs) -> str:
     """Return a random response for the given key, formatted with kwargs."""
@@ -1211,6 +1217,10 @@ def get_response(key: str, **kwargs) -> str:
         "exile_done": EXILE_DONE,
         "exile_failed": EXILE_FAILED,
         "exile_announcement": EXILE_ANNOUNCEMENT,
+        "translate_reply_required": TRANSLATE_REPLY_REQUIRED,
+        "translate_no_text": TRANSLATE_NO_TEXT,
+        "translate_too_long": TRANSLATE_TOO_LONG,
+        "translate_failed": TRANSLATE_FAILED,
     }
     options = _RESPONSES.get(key, [""])
     template = random.choice(options) if isinstance(options, list) else options
