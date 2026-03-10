@@ -1099,7 +1099,7 @@ EXILE_ANNOUNCEMENT = [
 TRANSLATE_REPLY_REQUIRED = ["Reply to a message to translate it."]
 TRANSLATE_NO_TEXT = ["That message has no text to translate."]
 TRANSLATE_TOO_LONG = ["Message too long to translate (max 5000 chars)."]
-TRANSLATE_FAILED = ["Translation failed."]
+TRANSLATE_FAILED = ["Translation failed, probably because you're a shit-talking pajeet. Just shut the fuck up."]
 
 
 def get_response(key: str, **kwargs) -> str:
