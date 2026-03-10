@@ -75,6 +75,8 @@ Paste the **actual value** (run the command, copy the output, paste into the sec
 | `AWS_ROLE_ARN` | Run `terraform output -raw github_actions_role_arn` → copy the full ARN → paste as value |
 | `SSH_PRIVATE_KEY` | Open `tengri-key.pem`, copy the entire file (including BEGIN/END lines) → paste as value |
 | `DEPLOY_HOST` | Run `terraform output -raw lightsail_public_ip` → copy the IP (e.g. `3.98.xxx.xxx`) → paste as value |
+| `HOST_AWS_ACCESS_KEY_ID` | Run `terraform output -raw host_access_key_id` → paste as value (for ECR login on host during deploy) |
+| `HOST_AWS_SECRET_ACCESS_KEY` | Run `terraform output -raw host_secret_access_key` → paste as value (run once, store securely) |
 
 ---
 
@@ -119,11 +121,13 @@ cd /opt/tengri-bot
 ### 3.5 Add ECR_REGISTRY to .env
 
 ```bash
-echo "ECR_REGISTRY=123456789.dkr.ecr.ca-central-1.amazonaws.com" >> /opt/tengri-bot/.env
+echo "ECR_REGISTRY=981498563925.dkr.ecr.ca-central-1.amazonaws.com/tengri-bot" >> /opt/tengri-bot/.env
 # Replace with your ECR registry from: terraform output ecr_repository_url | cut -d/ -f1
 ```
 
-### 3.6 Configure AWS credentials (for ECR pull + backup)
+### 3.6 Configure AWS credentials (for ECR pull + backup) — optional if using GitHub Secrets
+
+If you added `HOST_AWS_ACCESS_KEY_ID` and `HOST_AWS_SECRET_ACCESS_KEY` to GitHub Secrets (see Phase 2), the deploy step will pass them to the host and you can skip this step. Otherwise, configure credentials on the host so ECR pull and backup work:
 
 ```bash
 mkdir -p ~/.aws
@@ -137,9 +141,11 @@ chmod 600 ~/.aws/credentials
 
 ### 3.7 First deploy (manual)
 
+On the **Lightsail host** (Terraform is not installed there). Set `ECR_REGISTRY` from the value you got on your Mac: `terraform output -raw ecr_repository_url` → use the part before the first `/` (e.g. `981498563925.dkr.ecr.ca-central-1.amazonaws.com`). Or ensure it's in `/opt/tengri-bot/.env` (see 3.5).
+
 ```bash
 cd /opt/tengri-bot
-export ECR_REGISTRY=$(terraform output -raw ecr_repository_url | cut -d/ -f1)  # or set manually
+export ECR_REGISTRY=981498563925.dkr.ecr.ca-central-1.amazonaws.com
 aws ecr get-login-password --region ca-central-1 | docker login --username AWS --password-stdin $ECR_REGISTRY
 docker compose -f docker-compose.prod.yml pull
 docker compose -f docker-compose.prod.yml up -d
