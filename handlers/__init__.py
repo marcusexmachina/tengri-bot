@@ -4,6 +4,7 @@ from handlers.acquire_stfu import cmd_redeem
 from handlers.doxx import cmd_doxx, cmd_doxxed, cmd_revoke_doxx
 from handlers.exile import cmd_exile
 from handlers.fool import cmd_fool, cmd_unfool
+from handlers.mock import cmd_mock, cmd_unmock
 from handlers.privileged_peasants import cmd_privileged_peasants
 from handlers.reputation import cmd_based, cmd_cunt, cmd_edictoftengri, cmd_howbasedami, cmd_howbasediseveryone
 from handlers.stfu import (
@@ -18,6 +19,8 @@ from handlers.tengriguideme import _handle_help_callback, cmd_start, cmd_tengrig
 from handlers.translate import cmd_translate
 
 __all__ = [
+    "cmd_mock",
+    "cmd_unmock",
     "cmd_translate",
     "cmd_unstfu",
     "cmd_stfu",

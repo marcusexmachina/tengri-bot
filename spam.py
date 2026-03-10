@@ -364,6 +364,7 @@ async def handle_message_or_media(update: Update, context: ContextTypes.DEFAULT_
     target_group = context.bot_data.get("target_group")
     if not target_group or chat.id != target_group:
         return
+
     rep = get_rep(context, chat.id, user.id)
     if is_fully_muted(rep):
         try:
@@ -421,6 +422,16 @@ async def handle_message_or_media(update: Update, context: ContextTypes.DEFAULT_
         if acted:
             return
 
+        # Mocked users' media: delete immediately
+        from handlers.mock import _mock_mode_users
+
+        if user.id in _mock_mode_users(context):
+            try:
+                await context.bot.delete_message(chat_id=chat.id, message_id=message.message_id)
+            except Exception as e:
+                logger.warning("Mock media delete failed: %s", e)
+            return
+
         # Run NSFW in parallel so it doesn't block doxx/sticker cap/media flood
         nsfw_task = asyncio.create_task(_check_nsfw_and_act(update, context))
         nsfw_task.add_done_callback(_log_task_exception)
@@ -468,6 +479,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 recent_timestamps.append(ts)
         bucket.message_ids = recent_message_ids
         bucket.timestamps = recent_timestamps
+        # Mock mode: if user is mocked, send mocked reply
+        from handlers.mock import maybe_mock_message
+
+        if await maybe_mock_message(update, context):
+            pass
         return
     ids_to_delete = sorted(bucket.message_ids)
     chat_id = chat.id

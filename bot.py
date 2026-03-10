@@ -23,6 +23,7 @@ from handlers import (
     cmd_grant_stfu,
     cmd_howbasedami,
     cmd_howbasediseveryone,
+    cmd_mock,
     cmd_privileged_peasants,
     cmd_redeem,
     cmd_revoke_doxx,
@@ -34,6 +35,7 @@ from handlers import (
     cmd_tengriguideme,
     cmd_translate,
     cmd_unfool,
+    cmd_unmock,
     cmd_unstfu,
 )
 from spam import MessageBucket, handle_message_or_media
@@ -74,6 +76,8 @@ def main() -> None:
             BotCommand("start", "Open Tengri menu"),
             BotCommand("tengriguideme", "Open Tengri menu in DM"),
             BotCommand("translate", "Translate replied message (default: English)"),
+            BotCommand("mock", "Cast mock on target (reply or @user)"),
+            BotCommand("unmock", "Remove mock from target (reply or @user)"),
             BotCommand("based", "+1 reputation"),
             BotCommand("cunt", "-1 reputation"),
             BotCommand("howbasedami", "Check your reputation"),
@@ -105,6 +109,9 @@ def main() -> None:
             BotCommand("howbasediseveryone", "List all peasants by rep"),
             BotCommand("edictoftengri", "Set reputation (admin)"),
             BotCommand("tengriguideme", "Open Tengri menu in DM"),
+            BotCommand("translate", "Translate replied message (default: English)"),
+            BotCommand("mock", "Cast mock on target (reply or @user)"),
+            BotCommand("unmock", "Remove mock from target (reply or @user)"),
             BotCommand("redeem", "Redeem password for /stfu (DM)"),
             BotCommand("privileged_peasants", "Who has /stfu"),
             BotCommand("holycowshithindupajeetarmor", "STFU immunity"),
@@ -153,6 +160,8 @@ def main() -> None:
     app.add_handler(CommandHandler("redeem", cmd_redeem))
     app.add_handler(CommandHandler("translate", cmd_translate))
     app.add_handler(CommandHandler("tr", cmd_translate))
+    app.add_handler(CommandHandler("mock", cmd_mock))
+    app.add_handler(CommandHandler("unmock", cmd_unmock))
     # Match help:*, cmd:*, and acquire: callbacks. Flexible so new help/cmd buttons work without updating this.
     app.add_handler(
         CallbackQueryHandler(
