@@ -83,14 +83,11 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           HOST: ${{ secrets.DEPLOY_HOST }}
           ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
+          # Pass host credentials so the remote aws command uses them instead of instance role
+          HOST_AWS_ACCESS_KEY_ID: ${{ secrets.HOST_AWS_ACCESS_KEY_ID }}
+          HOST_AWS_SECRET_ACCESS_KEY: ${{ secrets.HOST_AWS_SECRET_ACCESS_KEY }}
         run: |
           mkdir -p ~/.ssh
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh -o StrictHostKeyChecking=accept-new -i ~/.ssh/deploy_key ubuntu@$HOST "
-            cd /opt/tengri-bot && \
-            export ECR_REGISTRY=$ECR_REGISTRY && \
-            aws ecr get-login-password --region ca-central-1 | docker login --username AWS --password-stdin \$ECR_REGISTRY && \
-            docker compose -f docker-compose.prod.yml pull && \
-            docker compose -f docker-compose.prod.yml up -d
-          "
+          ssh -o StrictHostKeyChecking=accept-new -i ~/.ssh/deploy_key ubuntu@$HOST "export AWS_ACCESS_KEY_ID='$HOST_AWS_ACCESS_KEY_ID' && export AWS_SECRET_ACCESS_KEY='$HOST_AWS_SECRET_ACCESS_KEY' && export ECR_REGISTRY=$ECR_REGISTRY && cd /opt/tengri-bot && aws ecr get-login-password --region ca-central-1 | docker login --username AWS --password-stdin \$ECR_REGISTRY && docker compose -f docker-compose.prod.yml pull && docker compose -f docker-compose.prod.yml up -d"
