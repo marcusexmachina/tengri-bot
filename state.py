@@ -245,8 +245,7 @@ def _save_reputation_shields(shields: dict) -> None:
         if parent:
             os.makedirs(parent, exist_ok=True)
         payload = [
-            {"chat_id": cid, "user_id": uid, "expires_at": expires_at}
-            for (cid, uid), expires_at in shields.items()
+            {"chat_id": cid, "user_id": uid, "expires_at": expires_at} for (cid, uid), expires_at in shields.items()
         ]
         with open(path, "w", encoding="utf-8") as f:
             json.dump(payload, f, indent=2)

@@ -557,8 +557,9 @@ async def cmd_retag_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                     data={"chat_id": chat.id, "user_id": target_user.id, "tag": tier},
                 )
         except Exception as e:  # pragma: no cover - best-effort tag update
-            logger.warning("retag_user: failed to set member tag for chat_id=%s user_id=%s: %s", chat.id, target_user.id, e)
-
+            logger.warning(
+                "retag_user: failed to set member tag for chat_id=%s user_id=%s: %s", chat.id, target_user.id, e
+            )
 
 
 async def cmd_edictoftengri(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
