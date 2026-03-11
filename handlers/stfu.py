@@ -299,16 +299,23 @@ async def cmd_stfu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         lookup_key = (int(chat.id), int(sender.id))
         grant = grants.get(lookup_key)
         grant_keys = list(grants.keys())
+        exp = 0.0
+        if grant is not None:
+            try:
+                exp = float(grant.get("expires_at", 0) or 0)
+            except (TypeError, ValueError):
+                exp = 0.0
         logger.info(
             "cmd_stfu: grant lookup key=%s (types: chat.id=%s sender.id=%s), found=%s, expires_at=%s, all_keys=%s",
             lookup_key,
             type(chat.id).__name__,
             type(sender.id).__name__,
             grant is not None,
-            grant.get("expires_at") if grant else None,
+            exp if grant is not None else None,
             grant_keys,
         )
-        if not grant or grant.get("expires_at", 0) < now:
+        # Permanent grants use expires_at == 0 (never expires). Timed grants expire when exp < now.
+        if not grant or (exp > 0 and exp < now):
             logger.info("cmd_stfu: sender has no mod rights and no valid grant -> not_admin_mute")
             from commands_menu import update_dm_commands_for_user, update_user_commands, user_grants
 

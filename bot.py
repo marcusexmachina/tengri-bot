@@ -8,7 +8,15 @@ from collections import defaultdict
 from dotenv import load_dotenv
 from telegram import BotCommand, BotCommandScopeAllChatAdministrators, BotCommandScopeDefault, Update
 from telegram.error import Conflict
-from telegram.ext import ApplicationBuilder, CallbackQueryHandler, CommandHandler, ContextTypes, MessageHandler, filters
+from telegram.ext import (
+    ApplicationBuilder,
+    CallbackQueryHandler,
+    ChatMemberHandler,
+    CommandHandler,
+    ContextTypes,
+    MessageHandler,
+    filters,
+)
 
 from grants import _load_stfu_grants
 from handlers import (
@@ -39,6 +47,7 @@ from handlers import (
     cmd_unfool,
     cmd_unmock,
     cmd_unstfu,
+    handle_chat_member_join_tag,
 )
 from spam import MessageBucket, handle_message_or_media
 from state import (
@@ -177,6 +186,13 @@ def main() -> None:
     )
     app.add_handler(CommandHandler("privileged_peasants", cmd_privileged_peasants))
     app.add_handler(CommandHandler("holycowshithindupajeetarmor", cmd_stfuproof))
+    app.add_handler(
+        ChatMemberHandler(
+            handle_chat_member_join_tag,
+            chat_member_types=ChatMemberHandler.CHAT_MEMBER,
+            chat_id=group_id,
+        )
+    )
 
     async def on_error(_update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
         if context.error and isinstance(context.error, Conflict):

@@ -31,6 +31,48 @@ from utils import _schedule_notification_delete
 
 logger = logging.getLogger(__name__)
 
+# Statuses that mean "not in group" vs "in group as non-admin"
+_LEFT_STATUSES = ("left", "kicked")
+_JOINED_STATUSES = ("member", "restricted")
+
+
+async def handle_chat_member_join_tag(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """When a user joins the target group, set their member tag from current rep (default Citizen)."""
+    chat_member = update.chat_member
+    if not chat_member:
+        return
+    target_group = context.bot_data.get("target_group")
+    chat = getattr(chat_member, "chat", None)
+    if not target_group or not chat or int(chat.id) != int(target_group):
+        return
+    old = getattr(chat_member, "old_chat_member", None)
+    new = getattr(chat_member, "new_chat_member", None)
+    if not old or not new:
+        return
+    old_status = getattr(old, "status", None) or ""
+    new_status = getattr(new, "status", None) or ""
+    if old_status not in _LEFT_STATUSES or new_status not in _JOINED_STATUSES:
+        return
+    # Don't override admin/creator titles.
+    if new_status in ("administrator", "creator"):
+        return
+    user = getattr(new, "user", None)
+    if not user:
+        return
+    chat_id = int(chat.id)
+    user_id = int(user.id)
+    rep = _get_reputation(context, chat_id, user_id)
+    tier = get_rep_tier(rep)
+    try:
+        if hasattr(context.bot, "_post"):
+            await context.bot._post(
+                "setChatMemberTag",
+                data={"chat_id": chat_id, "user_id": user_id, "tag": tier},
+            )
+        logger.info("Join tag set for user_id=%s in chat_id=%s as %s (%s pts)", user_id, chat_id, tier, rep)
+    except Exception as e:
+        logger.warning("Failed to set join member tag for chat_id=%s user_id=%s: %s", chat_id, user_id, e)
+
 
 def _get_reputation(context, chat_id: int, user_id: int) -> int:
     rep = context.bot_data.get("reputation") or {}

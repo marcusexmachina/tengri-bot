@@ -14,6 +14,7 @@ from handlers.reputation import (
     cmd_howbasediseveryone,
     cmd_retag_user,
     cmd_shieldnull,
+    handle_chat_member_join_tag,
 )
 from handlers.stfu import (
     cmd_grant_stfu,
@@ -54,4 +55,5 @@ __all__ = [
     "cmd_redeem",
     "cmd_retag_user",
     "cmd_shieldnull",
+    "handle_chat_member_join_tag",
 ]
