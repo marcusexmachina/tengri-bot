@@ -204,6 +204,55 @@ def _save_reputation_votes(votes: list) -> None:
         logger.warning("Failed to save reputation_votes to %s: %s", path, e)
 
 
+def _load_reputation_shields() -> dict:
+    """Load temporary rank shields: {(chat_id, user_id): expires_at}."""
+    path = _state_path("STATE_FILE", "reputation_shields.json")
+    if not path or not os.path.isfile(path):
+        return {}
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            raw = json.load(f)
+    except (OSError, json.JSONDecodeError) as e:
+        logger.warning("Failed to load reputation_shields from %s: %s", path, e)
+        return {}
+    if not isinstance(raw, list):
+        return {}
+    import time
+
+    now = time.time()
+    shields: dict[tuple[int, int], float] = {}
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        try:
+            cid = int(item["chat_id"])
+            uid = int(item["user_id"])
+            expires_at = float(item.get("expires_at", 0))
+        except (KeyError, TypeError, ValueError):
+            continue
+        if expires_at > now:
+            shields[(cid, uid)] = expires_at
+    return shields
+
+
+def _save_reputation_shields(shields: dict) -> None:
+    """Persist rank shields: {(chat_id, user_id): expires_at}."""
+    path = _state_path("STATE_FILE", "reputation_shields.json")
+    if not path:
+        return
+    try:
+        parent = os.path.dirname(path)
+        if parent:
+            os.makedirs(parent, exist_ok=True)
+        payload = [
+            {"chat_id": cid, "user_id": uid, "expires_at": expires_at} for (cid, uid), expires_at in shields.items()
+        ]
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(payload, f, indent=2)
+    except OSError as e:
+        logger.warning("Failed to save reputation_shields to %s: %s", path, e)
+
+
 def _load_acquired_stfu() -> set:
     """Returns set of (chat_id, user_id) who have ever acquired STFU via the flow."""
     path = _state_path("STATE_FILE", "acquired_stfu.json")

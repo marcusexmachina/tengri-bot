@@ -6,7 +6,15 @@ from handlers.exile import cmd_exile
 from handlers.fool import cmd_fool, cmd_unfool
 from handlers.mock import cmd_mock, cmd_unmock
 from handlers.privileged_peasants import cmd_privileged_peasants
-from handlers.reputation import cmd_based, cmd_cunt, cmd_edictoftengri, cmd_howbasedami, cmd_howbasediseveryone
+from handlers.reputation import (
+    cmd_based,
+    cmd_cunt,
+    cmd_edictoftengri,
+    cmd_howbasedami,
+    cmd_howbasediseveryone,
+    cmd_retag_user,
+    cmd_shieldnull,
+)
 from handlers.stfu import (
     cmd_grant_stfu,
     cmd_revoke_stfu,
@@ -44,4 +52,6 @@ __all__ = [
     "cmd_howbasediseveryone",
     "cmd_edictoftengri",
     "cmd_redeem",
+    "cmd_retag_user",
+    "cmd_shieldnull",
 ]

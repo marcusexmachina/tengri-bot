@@ -271,6 +271,18 @@ async def cmd_stfu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         _schedule_notification_delete(context, chat.id, sent.message_id)
         return
     logger.info("cmd_stfu in target group chat_id=%s", chat.id)
+    # 30s per-sender cooldown on /stfu to prevent spam.
+    now = time.time()
+    cooldown_map = context.bot_data.setdefault("stfu_cooldown", {})
+    caster_key = (int(chat.id), int(sender.id))
+    last_ts = float(cooldown_map.get(caster_key, 0) or 0)
+    remaining_cd = 30 - (now - last_ts)
+    if remaining_cd > 0:
+        msg = get_response("stfu_cooldown", seconds=int(remaining_cd) + 1)
+        sent = await message.reply_text(msg)
+        _schedule_notification_delete(context, chat.id, sent.message_id)
+        return
+    cooldown_map[caster_key] = now
     _schedule_notification_delete(context, chat.id, message.message_id)
     try:
         member = await context.bot.get_chat_member(chat.id, sender.id)
@@ -279,7 +291,6 @@ async def cmd_stfu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         sent = await message.reply_text(msg)
         _schedule_notification_delete(context, chat.id, sent.message_id)
         return
-    now = time.time()
     is_mod = _has_moderation_rights(member)
     is_delegate = False
     logger.info("cmd_stfu: sender_id=%s status=%s is_mod=%s", sender.id, getattr(member, "status", "?"), is_mod)
@@ -358,7 +369,7 @@ async def cmd_stfu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         target_rep = get_rep(context, chat.id, user.id)
         if has_stfu_immunity(target_rep):
             skipped_immune.append((user, -1))
-            logger.info("stfu: skipping user_id=%s (rep 200+ immunity)", uid)
+            logger.info("stfu: skipping user_id=%s (rep 250+ immunity)", uid)
             continue
         imm_key = (chat_id_int, uid)
         imm = immunity.get(imm_key)
@@ -422,7 +433,7 @@ async def cmd_stfu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
                 def _skip_desc(u, secs):
                     if secs < 0:
-                        return f"{u.mention_html()} (rep 200+ immunity)"
+                        return f"{u.mention_html()} (rep 250+ immunity)"
                     return f"{u.mention_html()} (~{_format_time_left(secs)} — holy cow shit shielded pajeet)"
 
                 skipped_list = ", ".join(_skip_desc(u, secs) for u, secs in skipped_immune)
@@ -440,7 +451,7 @@ async def cmd_stfu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             skip_parts = []
             for u, secs in skipped_immune:
                 if secs < 0:
-                    skip_parts.append(f"{u.mention_html()} (rep 200+ immunity)")
+                    skip_parts.append(f"{u.mention_html()} (rep 250+ immunity)")
                 else:
                     skip_parts.append(f"{u.mention_html()} (~{_format_time_left(secs)})")
             parts.append("Skipped: " + ", ".join(skip_parts))

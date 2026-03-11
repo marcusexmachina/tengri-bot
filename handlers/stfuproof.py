@@ -10,7 +10,7 @@ from config import STFUPROOF_COOLDOWN_SECONDS
 from reputation_thresholds import armor_duration_seconds, can_use_armor, get_rep
 from resolvers import _get_target_user_from_message
 from responses import get_response
-from utils import _format_time_left, _schedule_notification_delete
+from utils import _schedule_notification_delete
 
 logger = logging.getLogger(__name__)
 
@@ -68,14 +68,52 @@ async def cmd_stfuproof(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     if immunity is None:
         immunity = {}
         context.bot_data["stfuproof_immunity"] = immunity
+    # Check existing immunity for recipient: already protected or recently expired.
+    existing = immunity.get(recipient_key)
+    if existing is not None:
+        try:
+            imm_expires_at = float(existing.get("expires_at", 0))
+        except (TypeError, ValueError):
+            imm_expires_at = 0
+        if imm_expires_at > now:
+            # Armor already active; do not consume caster cooldown.
+            seconds_left = int(imm_expires_at - now)
+            tier_seconds = armor_duration_seconds(recipient_rep)
+            msg = get_response(
+                "stfuproof_already_immune",
+                seconds_left=seconds_left,
+                rep=recipient_rep,
+                tier_seconds=tier_seconds,
+            )
+            sent = await message.reply_text(msg, parse_mode="HTML")
+            _schedule_notification_delete(context, chat.id, sent.message_id)
+            return
+        # Armor expired; enforce 30s grace period before reapplying.
+        grace_seconds = 30
+        since_expired = now - imm_expires_at
+        remaining_grace = grace_seconds - since_expired
+        if remaining_grace > 0:
+            msg = get_response("stfuproof_recently_expired", seconds=int(remaining_grace) + 1)
+            sent = await message.reply_text(msg)
+            _schedule_notification_delete(context, chat.id, sent.message_id)
+            return
     immunity[recipient_key] = {"expires_at": now + duration}
     cooldown[caster_key] = now
     logger.info("stfuproof: user_id=%s immune for %ss (key=%s)", recipient_id, duration, recipient_key)
-    time_str = _format_time_left(duration)
+    breakdown_rep = recipient_rep
     if recipient_id == sender.id:
-        msg = get_response("stfuproof_self", time_str=time_str)
+        msg = get_response(
+            "stfuproof_self",
+            seconds=duration,
+            rep=breakdown_rep,
+        )
         sent = await message.reply_text(msg, parse_mode="HTML")
     else:
-        msg = get_response("stfuproof_other", mention=target_user.mention_html(), time_str=time_str)
+        msg = get_response(
+            "stfuproof_other",
+            mention=target_user.mention_html(),
+            seconds=duration,
+            rep=breakdown_rep,
+        )
         sent = await message.reply_text(msg, parse_mode="HTML")
     _schedule_notification_delete(context, chat.id, sent.message_id)

@@ -1,6 +1,6 @@
 """Reputation-based thresholds for STFU, acquire, armor, and restrictions."""
 
-from config import REPUTATION_DEFAULT, REPUTATION_MAX
+from config import REPUTATION_DEFAULT
 
 
 def get_rep(context, chat_id: int, user_id: int) -> int:
@@ -79,8 +79,9 @@ def armor_duration_seconds(rep: int) -> int:
 
 
 def has_stfu_immunity(rep: int) -> bool:
-    """Rep >= 200: immunity from /stfu (cannot be muted)."""
-    return rep >= REPUTATION_MAX
+    """Rep >= 250: immunity from /stfu (cannot be muted). Reserved for Grand Vizier+ tiers."""
+    # Grand Vizier: 250–299, Emperor's Hand: 300+
+    return rep >= 250
 
 
 def is_media_blocked(rep: int) -> bool:
@@ -93,3 +94,48 @@ def low_rep_text_cooldown_seconds(rep: int) -> int | None:
     if 10 <= rep < 30:
         return 30
     return None
+
+
+def get_rep_tier(rep: int) -> str:
+    """Map reputation points to a Babylonian title.
+
+    Ranges:
+    - Outcast:        < 10
+    - Dalit:          10–29
+    - Slave:          30–59
+    - Beggar:         60–72
+    - Peasant:        73–89
+    - Citizen:        90–119
+    - Herald:         120–124
+    - General:        125–149
+    - Satrap:         150–174
+    - Vizier:         175–199
+    - Regent:         200–249
+    - Grand Vizier:   250–299
+    - Emperor's Hand: 300+
+    """
+    if rep < 10:
+        return "Outcast"
+    if rep < 30:
+        return "Dalit"
+    if rep < 60:
+        return "Slave"
+    if rep < 73:
+        return "Beggar"
+    if rep < 90:
+        return "Peasant"
+    if rep < 120:
+        return "Citizen"
+    if rep < 125:
+        return "Herald"
+    if rep < 150:
+        return "General"
+    if rep < 175:
+        return "Satrap"
+    if rep < 200:
+        return "Vizier"
+    if rep < 250:
+        return "Regent"
+    if rep < 300:
+        return "Grand Vizier"
+    return "Emperor's Hand"

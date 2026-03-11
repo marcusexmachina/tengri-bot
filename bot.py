@@ -26,9 +26,11 @@ from handlers import (
     cmd_mock,
     cmd_privileged_peasants,
     cmd_redeem,
+    cmd_retag_user,
     cmd_revoke_doxx,
     cmd_revoke_stfu,
     cmd_save_grants,
+    cmd_shieldnull,
     cmd_start,
     cmd_stfu,
     cmd_stfuproof,
@@ -47,6 +49,7 @@ from state import (
     _load_doxx_hashes,
     _load_fool_marked,
     _load_reputation,
+    _load_reputation_shields,
     _load_reputation_votes,
 )
 
@@ -132,6 +135,7 @@ def main() -> None:
     app.bot_data["acquire_pending"] = _load_acquire_pending()
     app.bot_data["reputation"] = _load_reputation()
     app.bot_data["reputation_votes"] = _load_reputation_votes()
+    app.bot_data["reputation_shields"] = _load_reputation_shields()
     app.bot_data["dm_started_users"] = _load_dm_started_users()
     app.bot_data["username_cache"] = {}
     app.bot_data["stfuproof_immunity"] = {}
@@ -156,6 +160,8 @@ def main() -> None:
     app.add_handler(CommandHandler("howbasedami", cmd_howbasedami))
     app.add_handler(CommandHandler("howbasediseveryone", cmd_howbasediseveryone))
     app.add_handler(CommandHandler("edictoftengri", cmd_edictoftengri))
+    app.add_handler(CommandHandler("shieldnull", cmd_shieldnull))
+    app.add_handler(CommandHandler("retag_user", cmd_retag_user))
     app.add_handler(CommandHandler("tengriguideme", cmd_tengriguideme))
     app.add_handler(CommandHandler("redeem", cmd_redeem))
     app.add_handler(CommandHandler("translate", cmd_translate))

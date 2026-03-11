@@ -16,10 +16,17 @@ from config import (
 )
 from grants import _save_stfu_grants
 from permissions import _demote_zero_perms_admin, _full_permissions, _is_real_admin, _mute_permissions
-from reputation_thresholds import get_rep
+from reputation_thresholds import get_rep, get_rep_tier
 from resolvers import _get_target_user_from_message
 from responses import get_response
-from state import _load_reputation, _load_reputation_votes, _save_reputation, _save_reputation_votes
+from state import (
+    _load_reputation,
+    _load_reputation_shields,
+    _load_reputation_votes,
+    _save_reputation,
+    _save_reputation_shields,
+    _save_reputation_votes,
+)
 from utils import _schedule_notification_delete
 
 logger = logging.getLogger(__name__)
@@ -37,6 +44,96 @@ def _set_reputation(context, chat_id: int, user_id: int, points: int) -> None:
         context.bot_data["reputation"] = rep
     rep[(chat_id, user_id)] = points
     _save_reputation(rep)
+
+
+def _get_reputation_shields(context: ContextTypes.DEFAULT_TYPE) -> dict:
+    """Return in-memory reputation shields, loading from disk if needed, and prune expired."""
+    shields = context.bot_data.get("reputation_shields")
+    if shields is None:
+        shields = _load_reputation_shields()
+        context.bot_data["reputation_shields"] = shields
+    now = time.time()
+    keys_to_delete = [k for k, exp in shields.items() if not isinstance(exp, (int, float)) or exp <= now]
+    for k in keys_to_delete:
+        shields.pop(k, None)
+    if keys_to_delete:
+        _save_reputation_shields(shields)
+    return shields
+
+
+def _has_active_rank_shield(context: ContextTypes.DEFAULT_TYPE, chat_id: int, user_id: int) -> bool:
+    shields = _get_reputation_shields(context)
+    exp = shields.get((chat_id, user_id))
+    if not isinstance(exp, (int, float)):
+        return False
+    return exp > time.time()
+
+
+async def _handle_rank_change(
+    context: ContextTypes.DEFAULT_TYPE,
+    chat_id: int,
+    user_id: int,
+    old_points: int,
+    new_points: int,
+) -> None:
+    """Apply side effects for rank ascension/descension: shield + notification."""
+    if old_points == new_points:
+        return
+    old_tier = get_rep_tier(old_points)
+    new_tier = get_rep_tier(new_points)
+    if old_tier == new_tier:
+        return
+
+    direction = "ascended" if new_points > old_points else "descended"
+
+    # Apply 24h shield from reputation votes.
+    shields = _get_reputation_shields(context)
+    expires_at = time.time() + 24 * 60 * 60
+    shields[(chat_id, user_id)] = expires_at
+    _save_reputation_shields(shields)
+
+    # Resolve mention for notification and for potential tag updates.
+    mention = f"User {user_id}"
+    is_admin = False
+    try:
+        member = await context.bot.get_chat_member(chat_id, user_id)
+        if getattr(member, "user", None):
+            mention = member.user.mention_html()
+        status = getattr(member, "status", None)
+        is_admin = status in ("administrator", "creator")
+    except Exception as e:  # pragma: no cover - best-effort lookup
+        logger.warning("Rank change: failed to resolve mention for %s: %s", user_id, e)
+
+    # Update Telegram member tag to match the new tier for non-admins, if the bot has rights.
+    # Admins often have custom titles; we do not override those.
+    if not is_admin:
+        try:
+            if hasattr(context.bot, "_post"):
+                await context.bot._post(
+                    "setChatMemberTag",
+                    data={"chat_id": chat_id, "user_id": user_id, "tag": new_tier},
+                )
+        except Exception as e:  # pragma: no cover - best-effort tag update
+            logger.warning("Failed to set member tag for chat_id=%s user_id=%s: %s", chat_id, user_id, e)
+
+    if direction == "ascended":
+        msg = get_response(
+            "reputation_rank_ascended",
+            mention=mention,
+            tier=new_tier,
+            points=new_points,
+        )
+    else:
+        msg = get_response(
+            "reputation_rank_descended",
+            mention=mention,
+            tier=new_tier,
+            points=new_points,
+        )
+    try:
+        await context.bot.send_message(chat_id=chat_id, text=msg, parse_mode="HTML")
+    except Exception as e:  # pragma: no cover - best-effort notify
+        logger.warning("Rank change notification failed for chat_id=%s user_id=%s: %s", chat_id, user_id, e)
 
 
 def _can_vote(context, chat_id: int, voter_id: int, target_id: int, command: str) -> bool:
@@ -105,6 +202,9 @@ async def apply_reputation_delta(
                 )
             except Exception as e:
                 logger.warning("Low-rep unrestrict failed for %s: %s", user_id, e)
+
+    # Handle possible rank ascension/descension (no shield for divine overrides beyond votes).
+    await _handle_rank_change(context, chat_id, user_id, old_points, new_points)
     return new_points
 
 
@@ -185,6 +285,23 @@ async def _cmd_reputation(update: Update, context: ContextTypes.DEFAULT_TYPE, de
         context.bot_data["reputation"] = reputation
     key = (chat.id, target_user.id)
     current = reputation.get(key, REPUTATION_DEFAULT)
+
+    # Rank shield: consume vote and send normal response, but do not adjust reputation points.
+    if _has_active_rank_shield(context, chat.id, target_user.id):
+        if not is_real_admin:
+            _record_vote(context, chat.id, sender.id, target_user.id, command)
+        mention = target_user.mention_html()
+        if delta > 0:
+            msg = get_response("reputation_based", mention=mention, points=current)
+        else:
+            msg = get_response("reputation_cunt", mention=mention, points=current)
+        # Clarify that rank shield is active without changing points.
+        shield_note = get_response("reputation_rank_shield_note")
+        full_msg = f"{msg} {shield_note}"
+        sent = await message.reply_text(full_msg, parse_mode="HTML")
+        _schedule_notification_delete(context, chat.id, sent.message_id)
+        return
+
     new_points = max(REPUTATION_MIN, min(REPUTATION_MAX, current + delta))
     reputation[key] = new_points
     _save_reputation(reputation)
@@ -220,8 +337,13 @@ async def _cmd_reputation(update: Update, context: ContextTypes.DEFAULT_TYPE, de
                 )
             except Exception as e:
                 logger.warning("Low-rep unrestrict failed for %s: %s", target_user.id, e)
+
+    # Record vote after reputation has been updated.
     if not is_real_admin:
         _record_vote(context, chat.id, sender.id, target_user.id, command)
+
+    # Handle possible rank ascension/descension and apply shield.
+    await _handle_rank_change(context, chat.id, target_user.id, old_points, new_points)
     mention = target_user.mention_html()
     if delta > 0:
         msg = get_response("reputation_based", mention=mention, points=new_points)
@@ -240,26 +362,9 @@ async def cmd_cunt(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 def _get_howbasedami_checkpoint(rep: int) -> str:
-    """Return checkpoint message based on reputation."""
-    if rep >= 200:
-        return get_response("howbasedami_200", pts=rep)
-    if rep >= 175:
-        return get_response("howbasedami_175", pts=rep)
-    if rep >= 150:
-        return get_response("howbasedami_150", pts=rep)
-    if rep >= 125:
-        return get_response("howbasedami_125", pts=rep)
-    if rep >= 100:
-        return get_response("howbasedami_100", pts=rep)
-    if rep >= 80:
-        return get_response("howbasedami_80", pts=rep)
-    if rep >= 60:
-        return get_response("howbasedami_60", pts=rep)
-    if rep >= 30:
-        return get_response("howbasedami_30", pts=rep)
-    if rep >= 10:
-        return get_response("howbasedami_10", pts=rep)
-    return get_response("howbasedami_low", pts=rep)
+    """Return Babylonian title-based checkpoint message."""
+    tier = get_rep_tier(rep)
+    return get_response("howbasedami", tier=tier, pts=rep)
 
 
 # --- HOWBASEDISEVERYONE (rollback: remove handler, bot.py, commands_menu, __init__) ---
@@ -356,10 +461,105 @@ async def cmd_howbasedami(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         return
     _schedule_notification_delete(context, chat.id, message.message_id)
     rep = (context.bot_data.get("reputation") or {}).get((chat.id, user.id), REPUTATION_DEFAULT)
-    checkpoint = _get_howbasedami_checkpoint(rep)
-    msg = get_response("howbasedami", mention=user.mention_html(), checkpoint=checkpoint)
+    msg = _get_howbasedami_checkpoint(rep)
     sent = await message.reply_text(msg, parse_mode="HTML")
     _schedule_notification_delete(context, chat.id, sent.message_id)
+
+
+async def cmd_shieldnull(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Testing helper: clear rank shield for a target user (admin-only)."""
+    message = update.effective_message
+    chat = update.effective_chat
+    sender = update.effective_user
+    if not message or not chat or not sender:
+        return
+    target_group = context.bot_data.get("target_group")
+    if not target_group or chat.id != target_group:
+        return
+    try:
+        await context.bot.delete_message(chat_id=chat.id, message_id=message.message_id)
+    except Exception as e:
+        logger.warning("shieldnull cmd delete failed: %s", e)
+    try:
+        member = await context.bot.get_chat_member(chat.id, sender.id)
+    except Exception:
+        msg = get_response("admin_check_fail")
+        sent = await message.reply_text(msg)
+        _schedule_notification_delete(context, chat.id, sent.message_id)
+        return
+    if not _is_real_admin(member):
+        msg = get_response("edictoftengri_admin_only", mention=sender.mention_html())
+        sent = await message.reply_text(msg, parse_mode="HTML")
+        _schedule_notification_delete(context, chat.id, sent.message_id)
+        return
+    target_user = await _get_target_user_from_message(message, context)
+    if not target_user:
+        msg = get_response("reputation_no_target", command="shieldnull")
+        sent = await message.reply_text(msg)
+        _schedule_notification_delete(context, chat.id, sent.message_id)
+        return
+    shields = _get_reputation_shields(context)
+    key = (chat.id, target_user.id)
+    if key in shields:
+        shields.pop(key, None)
+        _save_reputation_shields(shields)
+
+
+async def cmd_retag_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Admin-only: recompute and apply member tag for a single user."""
+    message = update.effective_message
+    chat = update.effective_chat
+    sender = update.effective_user
+    if not message or not chat or not sender:
+        return
+    target_group = context.bot_data.get("target_group")
+    if not target_group or chat.id != target_group:
+        return
+    try:
+        await context.bot.delete_message(chat_id=chat.id, message_id=message.message_id)
+    except Exception as e:
+        logger.warning("retag_user cmd delete failed: %s", e)
+    try:
+        member = await context.bot.get_chat_member(chat.id, sender.id)
+    except Exception:
+        msg = get_response("admin_check_fail")
+        sent = await message.reply_text(msg)
+        _schedule_notification_delete(context, chat.id, sent.message_id)
+        return
+    if not _is_real_admin(member):
+        msg = get_response("edictoftengri_admin_only", mention=sender.mention_html())
+        sent = await message.reply_text(msg, parse_mode="HTML")
+        _schedule_notification_delete(context, chat.id, sent.message_id)
+        return
+    target_user = await _get_target_user_from_message(message, context)
+    if not target_user:
+        msg = get_response("reputation_no_target", command="retag_user")
+        sent = await message.reply_text(msg)
+        _schedule_notification_delete(context, chat.id, sent.message_id)
+        return
+
+    # Do not override admin titles.
+    try:
+        target_member = await context.bot.get_chat_member(chat.id, target_user.id)
+        status = getattr(target_member, "status", None)
+        is_admin = status in ("administrator", "creator")
+    except Exception:
+        is_admin = False
+
+    rep = _get_reputation(context, chat.id, target_user.id)
+    tier = get_rep_tier(rep)
+
+    if not is_admin:
+        try:
+            if hasattr(context.bot, "_post"):
+                await context.bot._post(
+                    "setChatMemberTag",
+                    data={"chat_id": chat.id, "user_id": target_user.id, "tag": tier},
+                )
+        except Exception as e:  # pragma: no cover - best-effort tag update
+            logger.warning(
+                "retag_user: failed to set member tag for chat_id=%s user_id=%s: %s", chat.id, target_user.id, e
+            )
 
 
 async def cmd_edictoftengri(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
