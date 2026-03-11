@@ -31,7 +31,17 @@ async def cmd_privileged_peasants(update: Update, context: ContextTypes.DEFAULT_
     grants = context.bot_data.setdefault("stfu_grants", {})
     now = time.time()
     chat_id = int(chat.id)
-    active = [(k, g) for k, g in grants.items() if int(k[0]) == chat_id and float(g.get("expires_at", 0)) > now]
+    active: list[tuple[tuple[int, int], dict]] = []
+    for key, grant in grants.items():
+        if int(key[0]) != chat_id:
+            continue
+        try:
+            exp = float(grant.get("expires_at", 0) or 0)
+        except (TypeError, ValueError):
+            exp = 0.0
+        # Permanent grants (exp == 0) are always active; timed grants only while exp > now.
+        if exp == 0 or exp > now:
+            active.append((key, grant))
     if not active:
         keys_in_chat = [k for k in grants if int(k[0]) == chat_id]
         logger.info(
@@ -55,8 +65,14 @@ async def cmd_privileged_peasants(update: Update, context: ContextTypes.DEFAULT_
         except Exception as e:
             logger.warning("get_chat_member failed for list_grants user_id=%s: %s", user_id, e)
             display = html.escape(str(user_id))
-        expires_at = float(g.get("expires_at", 0))
-        time_left = _format_time_left(expires_at - now)
+        try:
+            expires_at = float(g.get("expires_at", 0) or 0)
+        except (TypeError, ValueError):
+            expires_at = 0.0
+        if expires_at == 0:
+            time_left = "indefinite"
+        else:
+            time_left = _format_time_left(expires_at - now)
         link = f'<a href="tg://user?id={user_id}">{display}</a>'
         lines.append(f"• {link}  —  enabled  —  {time_left}")
     if len(active) > STFU_MAX_TARGETS:
