@@ -742,37 +742,25 @@ REPUTATION_CUNT = [
     "-1 cunt. {mention} now has {points} pts.",
 ]
 HOWBASEDAMI = [
-    "{mention} you have {checkpoint}",
+    "You are a {tier} at {pts} pts.",
 ]
-HOWBASEDAMI_200 = [
-    "enough based points ({pts}) that you should be admin.",
+REPUTATION_RANK_ASCENDED = [
+    "{mention} has ascended into <b>{tier}</b>, they are immune to reputation votes for 24 hours. Any votes will be consumed like normal but will not reflect on {mention}'s reputation points.",
 ]
-HOWBASEDAMI_175 = [
-    "enough basedness at {pts} pts — you're respected on this chat.",
+REPUTATION_RANK_DESCENDED = [
+    "{mention} has descended into <b>{tier}</b>, they are immune to reputation votes for 24 hours. Any votes will be consumed like normal but will not reflect on {mention}'s reputation points.",
 ]
-HOWBASEDAMI_150 = [
-    "you're based for sure at {pts} pts.",
+REPUTATION_RANK_SHIELD_NOTE = [
+    "(Rank shield active: your vote was consumed but their points did not change.)",
 ]
-HOWBASEDAMI_125 = [
-    "a pretty based standing at {pts} pts.",
+REPUTATION_SHIELD_CLEARED = [
+    "Divine intervention: rank shield cleared for {mention}.",
 ]
-HOWBASEDAMI_100 = [
-    "a solid standing at {pts} pts.",
+REPUTATION_SHIELD_EMPTY = [
+    "{mention} has no active rank shield to clear.",
 ]
-HOWBASEDAMI_80 = [
-    "a standing at {pts} pts and you're holding your own.",
-]
-HOWBASEDAMI_60 = [
-    "room to grow at {pts} pts.",
-]
-HOWBASEDAMI_30 = [
-    "the cunts piling up at {pts} pts.",
-]
-HOWBASEDAMI_10 = [
-    "only {pts} pts left — one more cunt and you lose /stfu.",
-]
-HOWBASEDAMI_LOW = [
-    "hit the gutter at {pts} pts. No /stfu for you.",
+REPUTATION_RETAG_USER_DONE = [
+    "Re-tagged {mention} as <b>{tier}</b> ({points} pts).",
 ]
 EDICTOFTENGRI_ADMIN_ONLY = [
     "{mention} only real admins can cast the Edict of Tengri.",
@@ -838,12 +826,23 @@ STFUPROOF_COOLDOWN = [
     "Chill pajeet, your holy cow shit armor is still recharging. Try again in {seconds} seconds, you impatient street shitter.",
 ]
 STFUPROOF_SELF = [
-    "I just rolled in fresh steaming cow dung like the filthy hindu street-shitting pajeet gutter monkey I am 🛡️💩\n"
-    "Goodluck muting me fucking dalit bitch, you worthless piece of shit.",
+    "I just rolled in fresh Hindu cow shit, I am protected from /stfu for {seconds} seconds (reputation {rep} - protected for {seconds} seconds; caster cooldown 60 seconds; 30 seconds grace after expiry).",
 ]
 STFUPROOF_OTHER = [
     "{mention} just smeared himself head-to-toe in sacred cow dung armor like every good hindu pajeet does after shitting in the street and bathing in corpse water 🛡️\n"
-    "This disgusting, betel-chewing, call-center-scamming, tiny-dick curry nigger is now /stfu-immune for {time_str}.\n",
+    "This disgusting, betel-chewing, call-center-scamming, tiny-dick curry nigger is now /stfu-immune for {seconds} seconds (reputation {rep} - protected for {seconds} seconds; caster cooldown 60 seconds; 30 seconds grace after expiry).",
+]
+
+STFUPROOF_ALREADY_IMMUNE = [
+    "This filthy cow-bathing pajeet already rolled in cow shit. Wait until it washes down ({seconds_left} seconds left). (reputation {rep} - protected for {tier_seconds} seconds; caster cooldown 60 seconds; 30 seconds grace after expiry), you armor-hungry sewer monkey.",
+]
+
+STFUPROOF_RECENTLY_EXPIRED = [
+    "The holy cow shit just washed off this pajeet. Wait {seconds} more seconds before trying to smear them again, you impatient gutter rat.",
+]
+
+STFU_COOLDOWN = [
+    "Relax, you spam-hungry pajeet hall monitor. /stfu is on cooldown for another {seconds} seconds—wait your turn before you start muting like a manic Modi mod.",
 ]
 TENGRIGUIDEME_DM_FAIL = [
     "I couldn't DM you, you retarded pajeet. Start a chat with me first, tap my Emblem → Message, then come back here in the chat and try again, you braindead shit-filled anal abomination cow-worshipping dalit fuck.",
@@ -912,7 +911,7 @@ TENGRIGUIDEME_HELP_BASED = [
     "<b>How to /based (give based points)</b>\n\n"
     "<b>What it is:</b> Reputation upvote. Each /based gives +1 point, starting from 100.\n\n"
     "<b>Who can use:</b> Anyone in the group except on themselves. Real admins are exempt from cooldown.\n\n"
-    "<b>How it works:</b> Every +1 shifts a user's reputation tier, which controls /stfu access, armor duration, and eventually full immunity at 200.\n\n"
+    "<b>How it works:</b> Every +1 shifts a user's reputation tier, which controls /stfu access, armor duration, and eventually full immunity at the highest divine ranks (Grand Vizier and Emperor's Hand).\n\n"
     "<b>Usage:</b>\n"
     "• Reply and type <code>/based</code>\n"
     "• Or <code>/based @username</code> (user must have spoken before)\n\n"
@@ -930,7 +929,7 @@ TENGRIGUIDEME_HELP_CUNT = [
 ]
 TENGRIGUIDEME_HELP_HOWBASEDAMI = [
     "<b>How to /howbasedami (check your reputation)</b>\n\n"
-    "<b>What it is:</b> Shows your current reputation points and a short verdict from Tengri.\n\n"
+    "<b>What it is:</b> Shows your current reputation points and Babylonian title.\n\n"
     "<b>Who can use:</b> Anyone in the group. Only works in the main group chat.\n\n"
     "<b>Usage:</b>\n"
     "• Just type <code>/howbasedami</code> in the group\n\n"
@@ -938,7 +937,7 @@ TENGRIGUIDEME_HELP_HOWBASEDAMI = [
 ]
 TENGRIGUIDEME_HELP_EDICTOFTENGRI = [
     "<b>How to /edictoftengri (force-set reputation)</b>\n\n"
-    "<b>What it is:</b> Divine override for reputation. Sets a user's rep directly to a value between 1 and 200.\n\n"
+    "<b>What it is:</b> Divine override for reputation. Sets a user's rep directly to a value between 1 and 350.\n\n"
     "<b>Who can use:</b> Real admins only (those who can restrict/ban).\n\n"
     "<b>Usage:</b>\n"
     "• Reply and type <code>/edictoftengri 150</code>\n"
@@ -946,7 +945,7 @@ TENGRIGUIDEME_HELP_EDICTOFTENGRI = [
     "<b>Effects:</b>\n"
     "• Setting rep &lt; 10 fully mutes the user and blocks all privileges.\n"
     "• Setting rep ≥ 30 unlocks timed /stfu acquisition.\n"
-    "• Setting rep ≥ 200 grants full immunity from /stfu and max delegate power.\n"
+    "• Setting rep ≥ 250 (Grand Vizier / Emperor's Hand) grants full immunity from /stfu and max delegate power.\n"
     "Use sparingly, you power-drunk monkey.",
 ]
 TENGRIGUIDEME_HELP_REDEEM = [
@@ -1000,7 +999,7 @@ STFU_IMMUNE_SINGLE = [
     "Not even admins can touch this untouchable, Ganges-bathing, hand-wiping subhuman filth. Cry about it.",
 ]
 STFU_IMMUNE_REP200 = [
-    "Can't mute {mention}: rep 200+ grants immunity from /stfu.",
+    "Can't mute {mention}: rep 250+ (Grand Vizier / Emperor's Hand) grants immunity from /stfu.",
 ]
 STFU_IMMUNE_MULTI = [
     "Skipped these disgusting pajeets (immune via cow dung armor — admins powerless): {skipped_list}\n"
@@ -1141,16 +1140,12 @@ def get_response(key: str, **kwargs) -> str:
         "reputation_based": REPUTATION_BASED,
         "reputation_cunt": REPUTATION_CUNT,
         "howbasedami": HOWBASEDAMI,
-        "howbasedami_200": HOWBASEDAMI_200,
-        "howbasedami_175": HOWBASEDAMI_175,
-        "howbasedami_150": HOWBASEDAMI_150,
-        "howbasedami_125": HOWBASEDAMI_125,
-        "howbasedami_100": HOWBASEDAMI_100,
-        "howbasedami_80": HOWBASEDAMI_80,
-        "howbasedami_60": HOWBASEDAMI_60,
-        "howbasedami_30": HOWBASEDAMI_30,
-        "howbasedami_10": HOWBASEDAMI_10,
-        "howbasedami_low": HOWBASEDAMI_LOW,
+        "reputation_rank_ascended": REPUTATION_RANK_ASCENDED,
+        "reputation_rank_descended": REPUTATION_RANK_DESCENDED,
+        "reputation_rank_shield_note": REPUTATION_RANK_SHIELD_NOTE,
+        "reputation_shield_cleared": REPUTATION_SHIELD_CLEARED,
+        "reputation_shield_empty": REPUTATION_SHIELD_EMPTY,
+        "reputation_retag_user_done": REPUTATION_RETAG_USER_DONE,
         "edictoftengri_admin_only": EDICTOFTENGRI_ADMIN_ONLY,
         "edictoftengri_no_target": EDICTOFTENGRI_NO_TARGET,
         "edictoftengri_usage": EDICTOFTENGRI_USAGE,
@@ -1174,6 +1169,8 @@ def get_response(key: str, **kwargs) -> str:
         "stfuproof_cooldown": STFUPROOF_COOLDOWN,
         "stfuproof_self": STFUPROOF_SELF,
         "stfuproof_other": STFUPROOF_OTHER,
+        "stfuproof_already_immune": STFUPROOF_ALREADY_IMMUNE,
+        "stfuproof_recently_expired": STFUPROOF_RECENTLY_EXPIRED,
         "tengriguideme_dm_fail": TENGRIGUIDEME_DM_FAIL,
         "tengriguideme_panel_text": TENGRIGUIDEME_PANEL_TEXT,
         "tengriguideme_cmd_privileged": TENGRIGUIDEME_CMD_PRIVILEGED,
@@ -1196,6 +1193,7 @@ def get_response(key: str, **kwargs) -> str:
         "stfu_immune_single": STFU_IMMUNE_SINGLE,
         "stfu_immune_rep200": STFU_IMMUNE_REP200,
         "stfu_immune_multi": STFU_IMMUNE_MULTI,
+        "stfu_cooldown": STFU_COOLDOWN,
         "fool_marked": FOOL_MARKED,
         "unfool_real_admin_only": UNFOOL_REAL_ADMIN_ONLY,
         "unfool_no_target": UNFOOL_NO_TARGET,
