@@ -1,6 +1,6 @@
 """Reputation-based thresholds for STFU, acquire, armor, and restrictions."""
 
-from config import REPUTATION_DEFAULT, REPUTATION_MAX
+from config import REPUTATION_DEFAULT
 
 
 def get_rep(context, chat_id: int, user_id: int) -> int:
