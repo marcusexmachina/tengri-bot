@@ -8,12 +8,11 @@ from telegram import Update
 from telegram.ext import ContextTypes
 
 from config import DOXX_HASH_MAX_SIZE_MB
+from handlers.citizenship import require_citizenship
 from permissions import _is_real_admin
 from responses import get_response
 from state import _load_doxx_grants, _load_doxx_hashes, _save_doxx_grants, _save_doxx_hashes
 from utils import _schedule_notification_delete
-
-from handlers.citizenship import require_citizenship
 
 logger = logging.getLogger(__name__)
 

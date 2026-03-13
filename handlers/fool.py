@@ -7,12 +7,11 @@ from telegram import Update
 from telegram.ext import ContextTypes
 
 from config import FOOL_VOTE_THRESHOLD, MUTE_SECONDS
+from handlers.citizenship import require_citizenship
 from permissions import _demote_zero_perms_admin, _is_real_admin, _mute_permissions
 from responses import get_response
 from state import _load_fool_marked, _save_fool_marked
 from utils import _schedule_notification_delete
-
-from handlers.citizenship import require_citizenship
 
 logger = logging.getLogger(__name__)
 

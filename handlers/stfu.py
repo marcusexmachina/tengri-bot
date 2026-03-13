@@ -15,6 +15,7 @@ from config import (
     TELEGRAM_MIN_RESTRICT_SECONDS,
 )
 from grants import _save_stfu_grants
+from handlers.citizenship import require_citizenship
 from permissions import (
     _demote_zero_perms_admin,
     _full_permissions,
@@ -27,7 +28,6 @@ from reputation_thresholds import (
     get_rep,
     has_stfu_immunity,
 )
-from handlers.citizenship import require_citizenship
 from resolvers import _get_target_user_from_message, _get_target_users_from_message
 from responses import get_response
 from utils import _format_time_left, _schedule_notification_delete, extract_duration_from_message

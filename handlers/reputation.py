@@ -15,6 +15,7 @@ from config import (
     REPUTATION_MIN,
 )
 from grants import _save_stfu_grants
+from handlers.citizenship import has_citizenship, require_citizenship
 from permissions import _demote_zero_perms_admin, _full_permissions, _is_real_admin, _mute_permissions
 from reputation_thresholds import get_rep, get_rep_tier
 from resolvers import _get_target_user_from_message
@@ -28,8 +29,6 @@ from state import (
     _save_reputation_votes,
 )
 from utils import _schedule_notification_delete
-
-from handlers.citizenship import has_citizenship, require_citizenship
 
 logger = logging.getLogger(__name__)
 
