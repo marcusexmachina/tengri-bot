@@ -27,6 +27,7 @@ from reputation_thresholds import (
     get_rep,
     has_stfu_immunity,
 )
+from handlers.citizenship import require_citizenship
 from resolvers import _get_target_user_from_message, _get_target_users_from_message
 from responses import get_response
 from utils import _format_time_left, _schedule_notification_delete, extract_duration_from_message
@@ -238,6 +239,8 @@ async def cmd_save_grants(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     if chat.id != target_group:
         sent = await message.reply_text(get_response("wrong_chat_short", chat_id=chat.id), parse_mode="HTML")
         _schedule_notification_delete(context, chat.id, sent.message_id)
+        return
+    if not await require_citizenship(update, context):
         return
     try:
         member = await context.bot.get_chat_member(chat.id, sender.id)

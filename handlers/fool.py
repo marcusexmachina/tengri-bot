@@ -12,6 +12,8 @@ from responses import get_response
 from state import _load_fool_marked, _save_fool_marked
 from utils import _schedule_notification_delete
 
+from handlers.citizenship import require_citizenship
+
 logger = logging.getLogger(__name__)
 
 
@@ -33,6 +35,8 @@ async def cmd_fool(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         return
     target_group = context.bot_data.get("target_group")
     if not target_group or chat.id != target_group:
+        return
+    if not await require_citizenship(update, context):
         return
     if not message.reply_to_message:
         return
@@ -121,6 +125,8 @@ async def cmd_unfool(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         return
 
     _schedule_notification_delete(context, chat.id, message.message_id)
+    if not await require_citizenship(update, context):
+        return
 
     try:
         member = await context.bot.get_chat_member(chat.id, sender.id)

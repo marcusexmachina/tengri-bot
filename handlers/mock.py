@@ -7,6 +7,7 @@ import random
 from telegram import ReplyParameters, Update
 from telegram.ext import ContextTypes
 
+from handlers.citizenship import require_citizenship
 from permissions import _is_real_admin
 from resolvers import _get_target_user_from_message
 
@@ -119,6 +120,9 @@ async def cmd_mock(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not target_group or chat.id != target_group:
         return
 
+    if not await require_citizenship(update, context):
+        return
+
     # Delete command immediately so nobody sees it
     try:
         await context.bot.delete_message(chat_id=chat.id, message_id=message.message_id)
@@ -150,6 +154,9 @@ async def cmd_unmock(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
 
     target_group = context.bot_data.get("target_group")
     if not target_group or chat.id != target_group:
+        return
+
+    if not await require_citizenship(update, context):
         return
 
     # Delete command immediately
