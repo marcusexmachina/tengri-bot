@@ -28,6 +28,7 @@ from handlers import (
     cmd_edictoftengri,
     cmd_exile,
     cmd_fool,
+    cmd_grant_citizenship,
     cmd_grant_stfu,
     cmd_howbasedami,
     cmd_howbasediseveryone,
@@ -35,6 +36,7 @@ from handlers import (
     cmd_privileged_peasants,
     cmd_redeem,
     cmd_retag_user,
+    cmd_revoke_citizenship,
     cmd_revoke_doxx,
     cmd_revoke_stfu,
     cmd_save_grants,
@@ -53,6 +55,7 @@ from spam import MessageBucket, handle_message_or_media
 from state import (
     _load_acquire_pending,
     _load_acquired_stfu,
+    _load_citizens,
     _load_dm_started_users,
     _load_doxx_grants,
     _load_doxx_hashes,
@@ -108,6 +111,8 @@ def main() -> None:
             BotCommand("unstfu", "Unmute user(s)"),
             BotCommand("grant_stfu", "Grant permanent /stfu (mod)"),
             BotCommand("revoke_stfu", "Revoke /stfu (mod)"),
+            BotCommand("grant_citizenship", "Grant citizenship (mod)"),
+            BotCommand("revoke_citizenship", "Revoke citizenship (mod)"),
             BotCommand("save_grants", "Save grants to disk (mod)"),
             BotCommand("doxx", "Flag media as doxx (granted)"),
             BotCommand("doxxed", "Grant doxx rights (admin)"),
@@ -142,6 +147,7 @@ def main() -> None:
     app.bot_data["doxx_hashes"] = _load_doxx_hashes()
     app.bot_data["acquired_stfu"] = _load_acquired_stfu()
     app.bot_data["acquire_pending"] = _load_acquire_pending()
+    app.bot_data["citizens"] = _load_citizens()
     app.bot_data["reputation"] = _load_reputation()
     app.bot_data["reputation_votes"] = _load_reputation_votes()
     app.bot_data["reputation_shields"] = _load_reputation_shields()
@@ -157,6 +163,8 @@ def main() -> None:
     app.add_handler(CommandHandler("stfu", cmd_stfu))
     app.add_handler(CommandHandler("grant_stfu", cmd_grant_stfu))
     app.add_handler(CommandHandler("revoke_stfu", cmd_revoke_stfu))
+    app.add_handler(CommandHandler("grant_citizenship", cmd_grant_citizenship))
+    app.add_handler(CommandHandler("revoke_citizenship", cmd_revoke_citizenship))
     app.add_handler(CommandHandler("save_grants", cmd_save_grants))
     app.add_handler(CommandHandler("doxxed", cmd_doxxed))
     app.add_handler(CommandHandler("doxx", cmd_doxx))

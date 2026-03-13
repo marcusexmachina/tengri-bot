@@ -7,6 +7,7 @@ from telegram import Update
 from telegram.ext import ContextTypes
 
 from config import FOOL_VOTE_THRESHOLD, MUTE_SECONDS
+from handlers.citizenship import require_citizenship
 from permissions import _demote_zero_perms_admin, _is_real_admin, _mute_permissions
 from responses import get_response
 from state import _load_fool_marked, _save_fool_marked
@@ -33,6 +34,8 @@ async def cmd_fool(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         return
     target_group = context.bot_data.get("target_group")
     if not target_group or chat.id != target_group:
+        return
+    if not await require_citizenship(update, context):
         return
     if not message.reply_to_message:
         return
@@ -121,6 +124,8 @@ async def cmd_unfool(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         return
 
     _schedule_notification_delete(context, chat.id, message.message_id)
+    if not await require_citizenship(update, context):
+        return
 
     try:
         member = await context.bot.get_chat_member(chat.id, sender.id)

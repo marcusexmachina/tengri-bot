@@ -253,6 +253,49 @@ def _save_reputation_shields(shields: dict) -> None:
         logger.warning("Failed to save reputation_shields to %s: %s", path, e)
 
 
+def _load_citizens() -> set:
+    """Load citizens set: {(chat_id, user_id)} who have been explicitly granted citizenship."""
+    path = _state_path("STATE_FILE", "citizens.json")
+    if not path or not os.path.isfile(path):
+        return set()
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            raw = json.load(f)
+    except (OSError, json.JSONDecodeError) as e:
+        logger.warning("Failed to load citizens from %s: %s", path, e)
+        return set()
+    if not isinstance(raw, list):
+        return set()
+    result = set()
+    for item in raw:
+        if isinstance(item, dict):
+            try:
+                result.add((int(item["chat_id"]), int(item["user_id"])))
+            except (KeyError, TypeError, ValueError):
+                pass
+        elif isinstance(item, list) and len(item) == 2:
+            try:
+                result.add((int(item[0]), int(item[1])))
+            except (TypeError, ValueError):
+                pass
+    return result
+
+
+def _save_citizens(citizens: set) -> None:
+    path = _state_path("STATE_FILE", "citizens.json")
+    if not path:
+        return
+    try:
+        parent = os.path.dirname(path)
+        if parent:
+            os.makedirs(parent, exist_ok=True)
+        payload = [{"chat_id": cid, "user_id": uid} for (cid, uid) in citizens]
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(payload, f, indent=2)
+    except OSError as e:
+        logger.warning("Failed to save citizens to %s: %s", path, e)
+
+
 def _load_acquired_stfu() -> set:
     """Returns set of (chat_id, user_id) who have ever acquired STFU via the flow."""
     path = _state_path("STATE_FILE", "acquired_stfu.json")

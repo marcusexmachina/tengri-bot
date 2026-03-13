@@ -5,6 +5,7 @@ import logging
 from telegram import Update
 from telegram.ext import ContextTypes
 
+from handlers.citizenship import require_citizenship
 from handlers.reputation import apply_reputation_delta
 from permissions import _can_exile
 from resolvers import _get_target_user_from_message
@@ -26,6 +27,8 @@ async def cmd_exile(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         return
 
     _schedule_notification_delete(context, chat.id, message.message_id)
+    if not await require_citizenship(update, context):
+        return
 
     try:
         member = await context.bot.get_chat_member(chat.id, sender.id)

@@ -15,6 +15,7 @@ from config import (
     REPUTATION_MIN,
 )
 from grants import _save_stfu_grants
+from handlers.citizenship import has_citizenship, require_citizenship
 from permissions import _demote_zero_perms_admin, _full_permissions, _is_real_admin, _mute_permissions
 from reputation_thresholds import get_rep, get_rep_tier
 from resolvers import _get_target_user_from_message
@@ -61,15 +62,20 @@ async def handle_chat_member_join_tag(update: Update, context: ContextTypes.DEFA
         return
     chat_id = int(chat.id)
     user_id = int(user.id)
-    rep = _get_reputation(context, chat_id, user_id)
-    tier = get_rep_tier(rep)
+    rep = context.bot_data.get("reputation")
+    if rep is None:
+        rep = _load_reputation()
+        context.bot_data["reputation"] = rep
+    if (chat_id, user_id) not in rep:
+        return  # New comer: no tag
+    tier = get_rep_tier(rep[(chat_id, user_id)])
     try:
         if hasattr(context.bot, "_post"):
             await context.bot._post(
                 "setChatMemberTag",
                 data={"chat_id": chat_id, "user_id": user_id, "tag": tier},
             )
-        logger.info("Join tag set for user_id=%s in chat_id=%s as %s (%s pts)", user_id, chat_id, tier, rep)
+        logger.info("Join tag set for user_id=%s in chat_id=%s as %s", user_id, chat_id, tier)
     except Exception as e:
         logger.warning("Failed to set join member tag for chat_id=%s user_id=%s: %s", chat_id, user_id, e)
 
@@ -281,6 +287,8 @@ async def _cmd_reputation(update: Update, context: ContextTypes.DEFAULT_TYPE, de
     if not target_group or chat.id != target_group:
         return
     _schedule_notification_delete(context, chat.id, message.message_id)
+    if not await require_citizenship(update, context):
+        return
     target_user = await _get_target_user_from_message(message, context)
     if not target_user:
         msg = get_response("reputation_no_target", command=command)
@@ -424,13 +432,19 @@ async def cmd_howbasediseveryone(update: Update, context: ContextTypes.DEFAULT_T
     if not target_group or chat.id != target_group:
         return
     _schedule_notification_delete(context, chat.id, message.message_id)
+    if not await require_citizenship(update, context):
+        return
 
     reputation = context.bot_data.get("reputation")
     if reputation is None:
         reputation = _load_reputation()
         context.bot_data["reputation"] = reputation
 
-    entries = [(user_id, pts) for (cid, user_id), pts in reputation.items() if cid == target_group]
+    entries = [
+        (user_id, pts)
+        for (cid, user_id), pts in reputation.items()
+        if cid == target_group and has_citizenship(context, cid, user_id)
+    ]
     if not entries:
         sent = await message.reply_text("No peasants in the record.")
         _schedule_notification_delete(context, chat.id, sent.message_id)
@@ -502,6 +516,8 @@ async def cmd_howbasedami(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     if not target_group or chat.id != target_group:
         return
     _schedule_notification_delete(context, chat.id, message.message_id)
+    if not await require_citizenship(update, context):
+        return
     rep = (context.bot_data.get("reputation") or {}).get((chat.id, user.id), REPUTATION_DEFAULT)
     msg = _get_howbasedami_checkpoint(rep)
     sent = await message.reply_text(msg, parse_mode="HTML")
@@ -517,6 +533,8 @@ async def cmd_shieldnull(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         return
     target_group = context.bot_data.get("target_group")
     if not target_group or chat.id != target_group:
+        return
+    if not await require_citizenship(update, context):
         return
     try:
         await context.bot.delete_message(chat_id=chat.id, message_id=message.message_id)
@@ -556,6 +574,8 @@ async def cmd_retag_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         return
     target_group = context.bot_data.get("target_group")
     if not target_group or chat.id != target_group:
+        return
+    if not await require_citizenship(update, context):
         return
     try:
         await context.bot.delete_message(chat_id=chat.id, message_id=message.message_id)
@@ -614,6 +634,8 @@ async def cmd_edictoftengri(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     if not target_group or chat.id != target_group:
         return
     _schedule_notification_delete(context, chat.id, message.message_id)
+    if not await require_citizenship(update, context):
+        return
     try:
         member = await context.bot.get_chat_member(chat.id, sender.id)
     except Exception:

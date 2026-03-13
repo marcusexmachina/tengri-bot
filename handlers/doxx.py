@@ -8,6 +8,7 @@ from telegram import Update
 from telegram.ext import ContextTypes
 
 from config import DOXX_HASH_MAX_SIZE_MB
+from handlers.citizenship import require_citizenship
 from permissions import _is_real_admin
 from responses import get_response
 from state import _load_doxx_grants, _load_doxx_hashes, _save_doxx_grants, _save_doxx_hashes
@@ -34,6 +35,8 @@ async def cmd_doxxed(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         return
 
     _schedule_notification_delete(context, chat.id, message.message_id)
+    if not await require_citizenship(update, context):
+        return
 
     try:
         member = await context.bot.get_chat_member(chat.id, sender.id)
@@ -83,6 +86,8 @@ async def cmd_doxx(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         return
     target_group = context.bot_data.get("target_group")
     if not target_group or chat.id != target_group:
+        return
+    if not await require_citizenship(update, context):
         return
     if not message.reply_to_message:
         msg = get_response("doxx_reply_required")
@@ -176,6 +181,8 @@ async def cmd_revoke_doxx(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         return
 
     _schedule_notification_delete(context, chat.id, message.message_id)
+    if not await require_citizenship(update, context):
+        return
 
     try:
         member = await context.bot.get_chat_member(chat.id, sender.id)

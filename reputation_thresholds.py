@@ -71,7 +71,7 @@ def armor_duration_seconds(rep: int) -> int:
         return 10 * 60
     if rep >= 150:
         return 3 * 60
-    if rep >= 125:
+    if rep >= 135:
         return 2 * 60
     if rep >= 60:
         return 60
@@ -106,8 +106,8 @@ def get_rep_tier(rep: int) -> str:
     - Beggar:         60–72
     - Peasant:        73–89
     - Citizen:        90–119
-    - Herald:         120–124
-    - General:        125–149
+    - Herald:         120–134
+    - General:        135–149
     - Satrap:         150–174
     - Vizier:         175–199
     - Regent:         200–249
@@ -126,7 +126,7 @@ def get_rep_tier(rep: int) -> str:
         return "Peasant"
     if rep < 120:
         return "Citizen"
-    if rep < 125:
+    if rep < 135:
         return "Herald"
     if rep < 150:
         return "General"

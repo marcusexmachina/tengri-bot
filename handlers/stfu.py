@@ -15,6 +15,7 @@ from config import (
     TELEGRAM_MIN_RESTRICT_SECONDS,
 )
 from grants import _save_stfu_grants
+from handlers.citizenship import require_citizenship
 from permissions import (
     _demote_zero_perms_admin,
     _full_permissions,
@@ -238,6 +239,8 @@ async def cmd_save_grants(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     if chat.id != target_group:
         sent = await message.reply_text(get_response("wrong_chat_short", chat_id=chat.id), parse_mode="HTML")
         _schedule_notification_delete(context, chat.id, sent.message_id)
+        return
+    if not await require_citizenship(update, context):
         return
     try:
         member = await context.bot.get_chat_member(chat.id, sender.id)

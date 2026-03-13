@@ -1102,6 +1102,20 @@ TRANSLATE_TOO_LONG = ["Message too long to translate (max 5000 chars)."]
 MOCK_ADMIN_ONLY = ["Only admins can cast /mock or /unmock."]
 TRANSLATE_FAILED = ["Translation failed, probably because you're a shit-talking pajeet. Just shut the fuck up."]
 
+# Citizenship
+CITIZENSHIP_REQUIRED = [
+    "You need to be a Citizen to invoke this command, pajeet.",
+    "Citizenship is required. You are a nobody. Fuck off.",
+]
+GRANT_CITIZENSHIP_MOD_ONLY = ["Only mods can grant citizenship."]
+GRANT_CITIZENSHIP_NO_TARGET = ["Reply or @mention who to grant citizenship."]
+GRANT_CITIZENSHIP_DONE = ["Citizenship granted, {mention}. Welcome, to your own mental abuse."]
+REVOKE_CITIZENSHIP_MOD_ONLY = ["Only mods can revoke citizenship."]
+REVOKE_CITIZENSHIP_NO_TARGET = ["Reply or @mention who to revoke."]
+REVOKE_CITIZENSHIP_PEASANT_BELOW = ["Cannot revoke peasants and below. They're already at the bottom."]
+REVOKE_CITIZENSHIP_NOT_CITIZEN = ["{mention} is not a citizen. Nothing to revoke."]
+REVOKE_CITIZENSHIP_DONE = ["Citizenship revoked, {mention}. Back to Ganges you go, loser."]
+
 
 def get_response(key: str, **kwargs) -> str:
     """Return a random response for the given key, formatted with kwargs."""
@@ -1222,6 +1236,15 @@ def get_response(key: str, **kwargs) -> str:
         "translate_too_long": TRANSLATE_TOO_LONG,
         "translate_failed": TRANSLATE_FAILED,
         "mock_admin_only": MOCK_ADMIN_ONLY,
+        "citizenship_required": CITIZENSHIP_REQUIRED,
+        "grant_citizenship_mod_only": GRANT_CITIZENSHIP_MOD_ONLY,
+        "grant_citizenship_no_target": GRANT_CITIZENSHIP_NO_TARGET,
+        "grant_citizenship_done": GRANT_CITIZENSHIP_DONE,
+        "revoke_citizenship_mod_only": REVOKE_CITIZENSHIP_MOD_ONLY,
+        "revoke_citizenship_no_target": REVOKE_CITIZENSHIP_NO_TARGET,
+        "revoke_citizenship_peasant_below": REVOKE_CITIZENSHIP_PEASANT_BELOW,
+        "revoke_citizenship_not_citizen": REVOKE_CITIZENSHIP_NOT_CITIZEN,
+        "revoke_citizenship_done": REVOKE_CITIZENSHIP_DONE,
     }
     options = _RESPONSES.get(key, [""])
     template = random.choice(options) if isinstance(options, list) else options

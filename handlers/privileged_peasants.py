@@ -8,6 +8,7 @@ from telegram import Update
 from telegram.ext import ContextTypes
 
 from config import STFU_MAX_TARGETS
+from handlers.citizenship import require_citizenship
 from responses import get_response
 from utils import _format_time_left, _schedule_notification_delete
 
@@ -28,6 +29,8 @@ async def cmd_privileged_peasants(update: Update, context: ContextTypes.DEFAULT_
         _schedule_notification_delete(context, chat.id, sent.message_id)
         return
     _schedule_notification_delete(context, chat.id, message.message_id)
+    if not await require_citizenship(update, context):
+        return
     grants = context.bot_data.setdefault("stfu_grants", {})
     now = time.time()
     chat_id = int(chat.id)
